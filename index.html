@@ -181,7 +181,7 @@
         <main class="flex-1 relative flex items-center justify-center p-4">
             
             <!-- MENU SCREEN -->
-            <div id="menu-screen" class="absolute inset-0 z-20 flex flex-col items-center justify-center bg-gray-900 p-6 space-y-6">
+            <div id="menu-screen" class="absolute inset-0 z-20 flex flex-col items-center justify-center p-6 space-y-6">
                 <div class="text-center space-y-3">
                     <h1 id="menu-title" class="menu-title">REMEMBER THE PATH</h1>
                     <p class="text-gray-400 text-sm max-w-xs mx-auto">Memorize the pattern. Repeat it exactly. Don't run out of time.</p>
@@ -198,14 +198,14 @@
             </div>
 
             <!-- STAGE INTRO SCREEN -->
-            <div id="stage-screen" class="hidden absolute inset-0 z-20 flex flex-col items-center justify-center bg-gray-900 p-6 space-y-6">
+            <div id="stage-screen" class="hidden absolute inset-0 z-20 flex flex-col items-center justify-center p-6 space-y-6">
                 <div class="text-center space-y-2">
                     <div class="text-xs text-gray-500 uppercase tracking-widest"></div>
                     <h2 id="stage-title" class="text-4xl font-extrabold text-white">STAGE 1</h2>
                     <div class="text-sm text-gray-400">Levels: <span id="stage-level-count">5</span></div>
                 </div>
                 <div class="bg-gray-800 border border-gray-700 rounded-xl p-4 w-full max-w-xs text-center">
-                    <div class="text-xs text-gray-500 uppercase tracking-widest mb-1">Difficulty</div>
+                    <div class="text-sm text-gray-500 uppercase tracking-widest mb-1">Difficulty</div>
                     <div id="stage-difficulty" class="text-2xl font-bold text-amber-400">Piece of Cake</div>
                 </div>
                 <button id="btn-stage-start" class="w-full max-w-xs bg-blue-600 hover:bg-blue-500 text-white font-bold py-3 px-4 rounded shadow-lg transform transition active:scale-95">START STAGE</button>
@@ -237,7 +237,7 @@
                         </div>
                         <div class="space-y-1 text-sm">
                             <div class="flex justify-between">
-                                <span class="text-gray-300">Base</span>
+                                <span class="text-gray-300">Level Pass</span>
                                 <span id="overlay-score-base" class="font-mono text-yellow-300">+0</span>
                             </div>
                             <div class="flex justify-between">
@@ -324,7 +324,7 @@
             playbackSpeedMin: 100,  // Cap for speed
             playbackSpeedIncrement: 50, // ms decrease per stage
             turnTimeBase: 1.5, // Seconds per square for input
-            mistakeRevealMs: 2000,
+            mistakeRevealMs: 2500,
             stageDifficulty: [
                 'Easy Peasy, Lemon Squeezy',
                 'Still Easy',
