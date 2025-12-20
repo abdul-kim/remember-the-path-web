@@ -1,0 +1,1015 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>REMEMBER The Path</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap');
+        
+        body {
+            font-family: 'Inter', sans-serif;
+            touch-action: manipulation; /* Prevent double-tap zoom */
+            user-select: none;
+        }
+
+        body::before {
+            content: "";
+            position: fixed;
+            inset: 0;
+            background:
+                linear-gradient(to right, rgba(148, 163, 184, 0.12) 1px, transparent 1px),
+                linear-gradient(to bottom, rgba(148, 163, 184, 0.12) 1px, transparent 1px);
+            background-size: 48px 48px;
+            opacity: 0.6;
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        body::after {
+            content: "";
+            position: fixed;
+            inset: 0;
+            background:
+                radial-gradient(300px 300px at 50% 55%, rgba(56, 189, 248, 0.10) 0%, transparent 70%),
+                radial-gradient(22px 22px at 46% 47%, rgba(56, 189, 248, 0.45) 0%, transparent 70%),
+                radial-gradient(22px 22px at 54% 47%, rgba(59, 130, 246, 0.38) 0%, transparent 70%),
+                radial-gradient(22px 22px at 50% 54%, rgba(56, 189, 248, 0.40) 0%, transparent 70%),
+                radial-gradient(22px 22px at 58% 58%, rgba(59, 130, 246, 0.32) 0%, transparent 70%),
+                radial-gradient(22px 22px at 42% 58%, rgba(56, 189, 248, 0.30) 0%, transparent 70%);
+            opacity: 0.7;
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        #app {
+            position: relative;
+            z-index: 1;
+        }
+
+        /* Custom Scrollbar for Leaderboard */
+        .custom-scroll::-webkit-scrollbar {
+            width: 6px;
+        }
+        .custom-scroll::-webkit-scrollbar-track {
+            background: #1f2937;
+        }
+        .custom-scroll::-webkit-scrollbar-thumb {
+            background: #4b5563;
+            border-radius: 3px;
+        }
+
+        /* Grid Cell Animations */
+        .cell {
+            transition: all 0.2s ease;
+        }
+        
+        .cell.active {
+            background-color: #38bdf8; /* Sky 400 */
+            box-shadow: 0 0 15px #38bdf8;
+            transform: scale(0.95);
+        }
+
+        .cell.success {
+            background-color: #4ade80; /* Green 400 */
+            box-shadow: 0 0 15px #4ade80;
+        }
+
+        .cell.correct {
+            background-color: #4ade80; /* Green 400 */
+            box-shadow: 0 0 15px #4ade80;
+        }
+
+        .cell.error {
+            background-color: #f87171; /* Red 400 */
+            box-shadow: 0 0 15px #f87171;
+            animation: shake 0.4s cubic-bezier(.36,.07,.19,.97) both;
+        }
+
+        .cell.reveal {
+            background-color: #f59e0b; /* Amber 500 */
+            box-shadow: 0 0 15px #f59e0b;
+        }
+
+        .menu-title {
+            font-size: clamp(2.5rem, 8vw, 4.75rem);
+            font-weight: 800;
+            letter-spacing: 0.2em;
+            text-transform: uppercase;
+            background: linear-gradient(90deg, #38bdf8, #a855f7, #38bdf8);
+            background-size: 200% auto;
+            -webkit-background-clip: text;
+            color: transparent;
+            text-shadow: 0 0 18px rgba(56, 189, 248, 0.35);
+            animation: title-glide 6s linear infinite;
+        }
+
+        .path-overlay {
+            position: absolute;
+            z-index: 5;
+            pointer-events: none;
+        }
+
+        .path-line {
+            stroke: #fbbf24;
+            stroke-width: 6;
+            fill: none;
+            stroke-linecap: round;
+            stroke-linejoin: round;
+            filter: drop-shadow(0 0 6px rgba(245, 158, 11, 0.6));
+        }
+
+        @keyframes shake {
+            10%, 90% { transform: translate3d(-1px, 0, 0); }
+            20%, 80% { transform: translate3d(2px, 0, 0); }
+            30%, 50%, 70% { transform: translate3d(-4px, 0, 0); }
+            40%, 60% { transform: translate3d(4px, 0, 0); }
+        }
+
+        @keyframes title-glide {
+            0% { background-position: 0% 50%; }
+            100% { background-position: 200% 50%; }
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+            .menu-title {
+                animation: none;
+            }
+        }
+
+        /* Timer Bar Animation */
+        .timer-bar {
+            transition: width 0.1s linear;
+        }
+    </style>
+</head>
+<body class="bg-gray-900 text-white h-screen flex flex-col overflow-hidden">
+
+    <!-- Game Container -->
+    <div id="app" class="flex-1 flex flex-col relative max-w-lg mx-auto w-full h-full">
+        
+        <!-- HEADER / HUD -->
+        <header id="hud-header" class="p-4 bg-gray-800 border-b border-gray-700 shadow-md z-10 hidden">
+            <div class="flex justify-between items-center mb-2">
+                <div>
+                    <h1 class="text-xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-blue-400 to-purple-500">REMEMBER THE PATH</h1>
+                    <div id="stage-info" class="text-xs text-gray-400 font-mono hidden">STAGE 1 - LVL 1</div>
+                </div>
+                <div class="text-right">
+                    <div id="score-display" class="text-2xl font-bold text-yellow-400 hidden">0</div>
+                    <div id="high-score-mini" class="text-xs text-gray-500 hidden">HI: 0</div>
+                </div>
+            </div>
+            
+            <!-- Hearts & Timer HUD -->
+            <div id="game-hud" class="hidden flex flex-col gap-2">
+                <div class="flex justify-between items-center">
+                    <div id="hearts-container" class="flex gap-1 text-red-500">
+                        <!-- Hearts injected here -->
+                    </div>
+                    <div id="status-text" class="text-sm font-semibold text-blue-300 uppercase tracking-wider">WAIT</div>
+                </div>
+                <!-- Timer Bar -->
+                <div class="w-full bg-gray-700 h-5 rounded-full overflow-hidden">
+                    <div id="timer-bar" class="h-full bg-blue-500 w-full"></div>
+                </div>
+            </div>
+        </header>
+
+        <!-- MAIN CONTENT AREA -->
+        <main class="flex-1 relative flex items-center justify-center p-4">
+            
+            <!-- MENU SCREEN -->
+            <div id="menu-screen" class="absolute inset-0 z-20 flex flex-col items-center justify-center bg-gray-900 p-6 space-y-6">
+                <div class="text-center space-y-3">
+                    <h1 id="menu-title" class="menu-title">REMEMBER THE PATH</h1>
+                    <p class="text-gray-400 text-sm max-w-xs mx-auto">Memorize the pattern. Repeat it exactly. Don't run out of time.</p>
+                </div>
+                
+                <div class="w-full max-w-xs space-y-4">
+                    <div>
+                        <label class="block text-xs text-gray-500 mb-1 uppercase tracking-wide">Player Name</label>
+                        <input type="text" id="player-name" class="w-full bg-gray-800 border border-gray-700 rounded p-3 text-white focus:outline-none focus:border-blue-500 transition" placeholder="Enter name" maxlength="10">
+                    </div>
+                    <button id="btn-start" class="w-full bg-blue-600 hover:bg-blue-500 text-white font-bold py-3 px-4 rounded shadow-lg transform transition active:scale-95">START GAME</button>
+                    <button id="btn-leaderboard" class="w-full bg-gray-700 hover:bg-gray-600 text-gray-300 font-semibold py-3 px-4 rounded shadow transform transition active:scale-95">LEADERBOARD</button>
+                </div>
+            </div>
+
+            <!-- STAGE INTRO SCREEN -->
+            <div id="stage-screen" class="hidden absolute inset-0 z-20 flex flex-col items-center justify-center bg-gray-900 p-6 space-y-6">
+                <div class="text-center space-y-2">
+                    <div class="text-xs text-gray-500 uppercase tracking-widest"></div>
+                    <h2 id="stage-title" class="text-4xl font-extrabold text-white">STAGE 1</h2>
+                    <div class="text-sm text-gray-400">Levels: <span id="stage-level-count">5</span></div>
+                </div>
+                <div class="bg-gray-800 border border-gray-700 rounded-xl p-4 w-full max-w-xs text-center">
+                    <div class="text-xs text-gray-500 uppercase tracking-widest mb-1">Difficulty</div>
+                    <div id="stage-difficulty" class="text-2xl font-bold text-amber-400">Piece of Cake</div>
+                </div>
+                <button id="btn-stage-start" class="w-full max-w-xs bg-blue-600 hover:bg-blue-500 text-white font-bold py-3 px-4 rounded shadow-lg transform transition active:scale-95">START STAGE</button>
+            </div>
+
+            <!-- GRID CONTAINER -->
+            <div id="game-container" class="hidden relative w-full aspect-square max-w-[400px] bg-gray-800 rounded-xl p-2 shadow-2xl border border-gray-700">
+                <div id="grid" class="w-full h-full grid gap-1.5 sm:gap-2">
+                    <!-- Grid cells generated by JS -->
+                </div>
+
+                <!-- Path reveal overlay -->
+                <svg id="path-overlay" class="path-overlay hidden">
+                    <defs>
+                        <marker id="path-arrow" markerWidth="5" markerHeight="5" refX="4" refY="2.5" orient="auto">
+                            <path d="M 0 0 L 5 2.5 L 0 5 z" fill="#fbbf24"></path>
+                        </marker>
+                    </defs>
+                    <path id="path-line" class="path-line" marker-end="url(#path-arrow)"></path>
+                </svg>
+                
+                <!-- Overlay for "Level Complete" / "Get Ready" -->
+                <div id="overlay-message" class="absolute inset-0 z-10 bg-gray-900/90 flex flex-col items-center justify-center text-center hidden backdrop-blur-sm rounded-xl">
+                    <h3 id="overlay-title" class="text-2xl font-bold text-white mb-2">LEVEL COMPLETE</h3>
+                    <div id="overlay-breakdown" class="w-full max-w-xs bg-gray-800/70 border border-gray-700 rounded-lg p-4 mb-5 text-left">
+                        <div class="flex justify-between text-[11px] uppercase tracking-wider text-gray-400 mb-2">
+                            <span>Score Breakdown</span>
+                            <span>Pts</span>
+                        </div>
+                        <div class="space-y-1 text-sm">
+                            <div class="flex justify-between">
+                                <span class="text-gray-300">Base</span>
+                                <span id="overlay-score-base" class="font-mono text-yellow-300">+0</span>
+                            </div>
+                            <div class="flex justify-between">
+                                <span class="text-gray-300">Time Bonus</span>
+                                <span id="overlay-score-time" class="font-mono text-yellow-300">+0</span>
+                            </div>
+                            <div class="flex justify-between">
+                                <span class="text-gray-300">Stage Bonus</span>
+                                <span id="overlay-score-stage" class="font-mono text-yellow-300">+0</span>
+                            </div>
+                        </div>
+                        <div class="mt-2 pt-2 border-t border-gray-700 flex justify-between text-sm font-semibold">
+                            <span class="text-gray-200">Total</span>
+                            <span id="overlay-score-total" class="font-mono text-yellow-300">+0</span>
+                        </div>
+                    </div>
+                    <button id="btn-next-level" class="bg-green-600 hover:bg-green-500 text-white font-bold py-2 px-6 rounded-full shadow-lg transform transition active:scale-95">NEXT LEVEL</button>
+                </div>
+            </div>
+
+            <!-- LEADERBOARD SCREEN -->
+            <div id="leaderboard-screen" class="hidden absolute inset-0 z-30 bg-gray-900 flex flex-col p-6">
+                <div class="flex justify-between items-center mb-6">
+                    <h2 class="text-2xl font-bold text-white">Leaderboard</h2>
+                    <button id="btn-close-leaderboard" class="bg-gray-700 hover:bg-gray-600 text-gray-200 text-xs font-semibold uppercase tracking-wider py-2 px-3 rounded-md border border-gray-600 shadow">Close</button>
+                </div>
+                <div class="flex-1 overflow-y-auto custom-scroll bg-gray-800 rounded-lg border border-gray-700">
+                    <table class="w-full text-left border-collapse">
+                        <thead class="bg-gray-700 text-xs text-gray-400 uppercase sticky top-0">
+                            <tr>
+                                <th class="p-3">Rank</th>
+                                <th class="p-3">Player</th>
+                                <th class="p-3">Stage/Level</th>
+                                <th class="p-3 text-right">Score</th>
+                            </tr>
+                        </thead>
+                        <tbody id="leaderboard-body" class="text-sm">
+                            <!-- Rows injected here -->
+                        </tbody>
+                    </table>
+                </div>
+                <div class="mt-4 text-center">
+                    <button id="btn-reset-data" class="text-xs text-red-500 hover:text-red-400 underline">Clear Data</button>
+                </div>
+            </div>
+
+            <!-- GAME OVER SCREEN -->
+            <div id="game-over-screen" class="hidden absolute inset-0 z-30 bg-gray-900/95 flex flex-col items-center justify-center p-6 text-center backdrop-blur-md">
+                <h2 class="text-4xl font-black text-red-500 mb-2">GAME OVER</h2>
+                <div class="text-6xl mb-2">💀</div>
+                <p class="text-gray-300 mb-6">You ran out of hearts.</p>
+                
+                <div class="bg-gray-800 rounded-lg p-6 w-full max-w-xs mb-6 border border-gray-700">
+                    <div class="text-xs text-gray-500 uppercase tracking-widest mb-1">Final Score</div>
+                    <div id="final-score" class="text-4xl font-bold text-white">0</div>
+                </div>
+
+                <div class="space-y-3 w-full max-w-xs">
+                    <button id="btn-retry" class="w-full bg-white text-gray-900 hover:bg-gray-100 font-bold py-3 px-4 rounded shadow-lg transform transition active:scale-95">TRY AGAIN</button>
+                    <button id="btn-home" class="w-full border border-gray-600 text-gray-400 hover:text-white hover:border-gray-500 font-semibold py-3 px-4 rounded transition">MAIN MENU</button>
+                </div>
+            </div>
+
+        </main>
+    </div>
+
+    <!-- AUDIO ELEMENTS (Simple synthesizers used in JS, fallback placeholders here) -->
+
+    <script>
+        /**
+         * CONFIGURATION
+         */
+        const CONFIG = {
+            stages: [
+                { id: 1, size: 4, levels: 3 },
+                { id: 2, size: 5, levels: 4 },
+                { id: 3, size: 6, levels: 5 },
+                { id: 4, size: 7, levels: 6 },
+                { id: 5, size: 8, levels: 7 },
+            ],
+            initialHearts: 3,
+            baseScorePerLevel: 10,
+            playbackSpeedBase: 300, // ms per square
+            playbackSpeedMin: 100,  // Cap for speed
+            playbackSpeedIncrement: 50, // ms decrease per stage
+            turnTimeBase: 1.5, // Seconds per square for input
+            mistakeRevealMs: 2000,
+            stageDifficulty: [
+                'Easy Peasy, Lemon Squeezy',
+                'Still Easy',
+                '6 7 Difficulty',
+                'Okay Now...',
+                'Hold Up...',
+                'God Mode!'
+            ],
+            localStorageKey: 'ftp_leaderboard_v1'
+        };
+
+        /**
+         * STATE MANAGEMENT
+         */
+        const state = {
+            status: 'MENU', // MENU, WATCH, INPUT, SUCCESS, FAIL, GAMEOVER
+            player: {
+                name: 'Player',
+                score: 0,
+                hearts: CONFIG.initialHearts,
+                stageIndex: 0,
+                levelIndex: 0 // 0-based, so 0 is Level 1
+            },
+            grid: [],
+            path: [], // Array of {r, c}
+            inputIndex: 0,
+            timer: null,
+            timerValue: 0,
+            maxTime: 0
+        };
+
+        // DOM Elements
+        const screens = {
+            menu: document.getElementById('menu-screen'),
+            stage: document.getElementById('stage-screen'),
+            game: document.getElementById('game-container'),
+            leaderboard: document.getElementById('leaderboard-screen'),
+            gameOver: document.getElementById('game-over-screen')
+        };
+        
+        const ui = {
+            header: document.getElementById('hud-header'),
+            hud: document.getElementById('game-hud'),
+            stageInfo: document.getElementById('stage-info'),
+            scoreDisplay: document.getElementById('score-display'),
+            highScoreMini: document.getElementById('high-score-mini'),
+            heartsContainer: document.getElementById('hearts-container'),
+            statusText: document.getElementById('status-text'),
+            timerBar: document.getElementById('timer-bar'),
+            grid: document.getElementById('grid'),
+            overlay: document.getElementById('overlay-message'),
+            overlayTitle: document.getElementById('overlay-title'),
+            overlaySubtitle: document.getElementById('overlay-subtitle'),
+            overlayBaseScore: document.getElementById('overlay-score-base'),
+            overlayTimeBonus: document.getElementById('overlay-score-time'),
+            overlayStageBonus: document.getElementById('overlay-score-stage'),
+            overlayTotalScore: document.getElementById('overlay-score-total'),
+            btnNext: document.getElementById('btn-next-level'),
+            pathOverlay: document.getElementById('path-overlay'),
+            pathLine: document.getElementById('path-line'),
+            stageTitle: document.getElementById('stage-title'),
+            stageLevelCount: document.getElementById('stage-level-count'),
+            stageDifficulty: document.getElementById('stage-difficulty'),
+            playerNameInput: document.getElementById('player-name'),
+            finalScore: document.getElementById('final-score'),
+            leaderboardBody: document.getElementById('leaderboard-body')
+        };
+
+        /**
+         * PATH GENERATION ALGORITHM
+         */
+        const PathGenerator = {
+            generate(size, levelIndex) {
+                // Determine complexity based on levelIndex (0-4)
+                // Level 0: Straight line (0 turns)
+                // Level 4: Complex (Many turns)
+                const minTurns = levelIndex === 0 ? 0 : levelIndex + 1; 
+                const length = Math.min(size * size, 4 + levelIndex + Math.floor(size/2)); 
+
+                let bestPath = [];
+
+                // Try multiple times to find a valid path that meets criteria
+                for(let attempt = 0; attempt < 20; attempt++) {
+                    const startR = Math.floor(Math.random() * size);
+                    const startC = Math.floor(Math.random() * size);
+                    
+                    const path = this.walk(size, startR, startC, length, minTurns);
+                    if (path && path.length >= length) {
+                        bestPath = path;
+                        break;
+                    }
+                    // Fallback to any valid path found if loop nears end
+                    if (path && path.length > bestPath.length) bestPath = path;
+                }
+                
+                // If backtracking failed to make a long enough path, just make a simple one
+                if (bestPath.length < 3) {
+                     // Fallback simple line generator
+                     bestPath = [];
+                     for(let i=0; i<Math.min(size, 4); i++) bestPath.push({r:0, c:i});
+                }
+
+                return bestPath;
+            },
+
+            walk(size, r, c, targetLength, minTurns) {
+                const stack = [{ r, c, path: [{r,c}], turns: 0, lastDir: null }];
+                
+                // DFS for path generation
+                // Note: Iterative DFS to avoid stack overflow, though recursion is fine for 8x8
+                // Using a simplified randomized DFS
+                
+                return this.recursiveWalk(size, r, c, [], null, 0, targetLength, minTurns);
+            },
+
+            recursiveWalk(size, r, c, currentPath, lastDir, currentTurns, targetLen, minTurns) {
+                const newPath = [...currentPath, {r, c}];
+                
+                if (newPath.length === targetLen) {
+                    return (currentTurns >= minTurns) ? newPath : null;
+                }
+
+                const directions = [
+                    {dr: -1, dc: 0}, // Up
+                    {dr: 1, dc: 0},  // Down
+                    {dr: 0, dc: -1}, // Left
+                    {dr: 0, dc: 1}   // Right
+                ];
+
+                // Shuffle directions for randomness
+                for (let i = directions.length - 1; i > 0; i--) {
+                    const j = Math.floor(Math.random() * (i + 1));
+                    [directions[i], directions[j]] = [directions[j], directions[i]];
+                }
+
+                for (let dir of directions) {
+                    const nr = r + dir.dr;
+                    const nc = c + dir.dc;
+
+                    // Check bounds
+                    if (nr >= 0 && nr < size && nc >= 0 && nc < size) {
+                        // Check not visited
+                        if (!newPath.some(p => p.r === nr && p.c === nc)) {
+                            
+                            // Check turns
+                            let newTurns = currentTurns;
+                            if (lastDir && (lastDir.dr !== dir.dr || lastDir.dc !== dir.dc)) {
+                                newTurns++;
+                            }
+
+                            const result = this.recursiveWalk(size, nr, nc, newPath, dir, newTurns, targetLen, minTurns);
+                            if (result) return result;
+                        }
+                    }
+                }
+                return null;
+            }
+        };
+
+        /**
+         * GAME LOGIC
+         */
+        function init() {
+            // Load High Score
+            updateMiniHighScore();
+            
+            // Event Listeners
+            document.getElementById('btn-start').addEventListener('click', startGame);
+            document.getElementById('btn-leaderboard').addEventListener('click', showLeaderboard);
+            document.getElementById('btn-close-leaderboard').addEventListener('click', hideLeaderboard);
+            document.getElementById('btn-reset-data').addEventListener('click', resetData);
+            document.getElementById('btn-next-level').addEventListener('click', nextLevel);
+            document.getElementById('btn-stage-start').addEventListener('click', startStage);
+            document.getElementById('btn-retry').addEventListener('click', restartGame);
+            document.getElementById('btn-home').addEventListener('click', goHome);
+        }
+
+        function startGame() {
+            const name = ui.playerNameInput.value.trim() || "Player";
+            state.player.name = name;
+            state.player.score = 0;
+            state.player.hearts = CONFIG.initialHearts;
+            state.player.stageIndex = 0;
+            state.player.levelIndex = 0;
+            
+            showStageIntro();
+        }
+
+        function restartGame() {
+            startGame();
+        }
+
+        function goHome() {
+            showScreen('menu');
+            ui.hud.classList.add('hidden');
+            ui.stageInfo.classList.add('hidden');
+            ui.scoreDisplay.classList.add('hidden');
+            ui.highScoreMini.classList.add('hidden');
+        }
+
+        function showStageIntro() {
+            const stageConfig = CONFIG.stages[state.player.stageIndex];
+            const stageNumber = state.player.stageIndex + 1;
+            const difficulty = CONFIG.stageDifficulty[state.player.stageIndex] || 'Unknown';
+
+            ui.hud.classList.add('hidden');
+            ui.stageInfo.classList.add('hidden');
+            ui.scoreDisplay.classList.add('hidden');
+            ui.highScoreMini.classList.add('hidden');
+            updateHUD();
+            ui.stageTitle.textContent = `STAGE ${stageNumber}`;
+            ui.stageLevelCount.textContent = stageConfig.levels;
+            ui.stageDifficulty.textContent = difficulty;
+            showScreen('stage');
+        }
+
+        function startStage() {
+            ui.hud.classList.remove('hidden');
+            ui.stageInfo.classList.remove('hidden');
+            ui.scoreDisplay.classList.remove('hidden');
+            ui.highScoreMini.classList.remove('hidden');
+            showScreen('game');
+            startLevel();
+        }
+
+        function updateHUD() {
+            const stageData = CONFIG.stages[state.player.stageIndex];
+            ui.stageInfo.textContent = `STAGE ${state.player.stageIndex + 1} - LVL ${state.player.levelIndex + 1}`;
+            ui.scoreDisplay.textContent = state.player.score;
+            
+            // Render Hearts
+            ui.heartsContainer.innerHTML = '';
+            for (let i = 0; i < CONFIG.initialHearts; i++) {
+                const heart = document.createElement('span');
+                heart.innerHTML = '&#10084;'; // Heart entity
+                heart.className = i < state.player.hearts ? 'text-red-500 animate-pulse' : 'text-gray-700';
+                heart.style.fontSize = '1.25rem';
+                ui.heartsContainer.appendChild(heart);
+            }
+        }
+
+        function startLevel() {
+            ui.overlay.classList.add('hidden');
+            ui.pathOverlay.classList.add('hidden');
+            state.status = 'WATCH';
+            state.inputIndex = 0;
+            ui.statusText.textContent = "WATCH";
+            ui.statusText.className = "text-sm font-semibold text-blue-300 uppercase tracking-wider";
+            ui.timerBar.style.width = '100%';
+            ui.timerBar.className = 'h-full bg-blue-500 w-full';
+
+            const stageConfig = CONFIG.stages[state.player.stageIndex];
+            
+            // 1. Generate Grid
+            renderGrid(stageConfig.size);
+
+            // 2. Generate Path
+            state.path = PathGenerator.generate(stageConfig.size, state.player.levelIndex);
+
+            // 3. Playback Sequence
+            setTimeout(() => playSequence(), 800);
+        }
+
+        function renderGrid(size) {
+            ui.grid.innerHTML = '';
+            ui.grid.style.gridTemplateColumns = `repeat(${size}, 1fr)`;
+            
+            state.grid = [];
+            for(let r=0; r<size; r++) {
+                for(let c=0; c<size; c++) {
+                    const cell = document.createElement('div');
+                    // touch-none added to prevent scrolling interference
+                    cell.className = "cell w-full h-full bg-gray-700 rounded-md cursor-pointer hover:bg-gray-600 border border-gray-600 touch-none";
+                    cell.dataset.r = r;
+                    cell.dataset.c = c;
+                    
+                    // Unified Pointer Event Handler (Handles Touch and Mouse)
+                    cell.addEventListener('pointerdown', (e) => {
+                         e.preventDefault(); 
+                         handleInput(r, c, cell);
+                    });
+                    
+                    ui.grid.appendChild(cell);
+                    state.grid.push({r, c, el: cell});
+                }
+            }
+        }
+
+        function getCell(r, c) {
+            return state.grid.find(item => item.r === r && item.c === c)?.el;
+        }
+
+        async function playSequence() {
+            // Speed Calculation: Faster as stages progress
+            const speed = Math.max(CONFIG.playbackSpeedMin, CONFIG.playbackSpeedBase - (state.player.stageIndex * CONFIG.playbackSpeedIncrement));
+            
+            for (let i = 0; i < state.path.length; i++) {
+                const {r, c} = state.path[i];
+                const el = getCell(r, c);
+                
+                // Highlight
+                el.classList.add('active');
+                playTone(300 + (i*50), 'sine', 0.1); // Audio feedback
+                
+                await new Promise(res => setTimeout(res, speed));
+                
+                // Unhighlight (keep a small gap if it's the same cell - though path gen usually moves)
+                el.classList.remove('active');
+                await new Promise(res => setTimeout(res, speed * 0.5));
+            }
+
+            beginInputPhase();
+        }
+
+        function updateRevealPathLine(startIndex) {
+            const gridRect = ui.grid.getBoundingClientRect();
+            const containerRect = screens.game.getBoundingClientRect();
+
+            if (!gridRect.width || !gridRect.height) return false;
+
+            const left = gridRect.left - containerRect.left;
+            const top = gridRect.top - containerRect.top;
+
+            ui.pathOverlay.style.left = `${left}px`;
+            ui.pathOverlay.style.top = `${top}px`;
+            ui.pathOverlay.style.width = `${gridRect.width}px`;
+            ui.pathOverlay.style.height = `${gridRect.height}px`;
+            ui.pathOverlay.setAttribute('viewBox', `0 0 ${gridRect.width} ${gridRect.height}`);
+
+            const segment = state.path.slice(startIndex);
+            const points = segment.map(({r, c}) => {
+                const el = getCell(r, c);
+                if (!el) return null;
+                const rect = el.getBoundingClientRect();
+                return {
+                    x: rect.left - gridRect.left + rect.width / 2,
+                    y: rect.top - gridRect.top + rect.height / 2
+                };
+            }).filter(Boolean);
+
+            if (points.length < 2) return false;
+
+            let d = `M ${points[0].x} ${points[0].y}`;
+            for (let i = 1; i < points.length; i++) {
+                d += ` L ${points[i].x} ${points[i].y}`;
+            }
+            ui.pathLine.setAttribute('d', d);
+
+            const length = ui.pathLine.getTotalLength();
+            ui.pathLine.dataset.length = length;
+            ui.pathLine.style.strokeDasharray = length;
+            ui.pathLine.style.strokeDashoffset = length;
+            return true;
+        }
+
+        function revealPathBriefly(startIndex, onDone) {
+            const start = Math.max(0, startIndex || 0);
+            const hasLine = updateRevealPathLine(start);
+
+            if (hasLine) {
+                ui.pathLine.style.transition = 'none';
+                void ui.pathLine.getBoundingClientRect();
+                ui.pathOverlay.classList.remove('hidden');
+                ui.pathLine.style.transition = `stroke-dashoffset ${CONFIG.mistakeRevealMs}ms ease-out`;
+                ui.pathLine.style.strokeDashoffset = '0';
+            }
+
+            state.path.slice(start).forEach(({r, c}) => {
+                const el = getCell(r, c);
+                if (!el) return;
+                el.classList.add('reveal');
+            });
+
+            setTimeout(() => {
+                state.path.slice(start).forEach(({r, c}) => {
+                    const el = getCell(r, c);
+                    if (!el) return;
+                    el.classList.remove('reveal');
+                });
+                if (hasLine) {
+                    const length = Number(ui.pathLine.dataset.length || 0);
+                    ui.pathLine.style.transition = 'none';
+                    ui.pathLine.style.strokeDashoffset = length;
+                    ui.pathOverlay.classList.add('hidden');
+                }
+                if (typeof onDone === 'function') {
+                    onDone();
+                }
+            }, CONFIG.mistakeRevealMs);
+        }
+
+        function beginInputPhase() {
+            state.status = 'INPUT';
+            ui.statusText.textContent = "YOUR TURN";
+            ui.statusText.className = "text-sm font-bold text-green-400 uppercase tracking-wider animate-pulse";
+            ui.timerBar.className = 'h-full bg-green-500 w-full';
+
+            // Timer Setup
+            // Time depends on path length + complexity
+            const timePerSquare = Math.max(0.8, CONFIG.turnTimeBase - (state.player.stageIndex * 0.1));
+            state.maxTime = state.path.length * timePerSquare * 1000; 
+            state.timerValue = state.maxTime;
+            
+            if (state.timer) clearInterval(state.timer);
+            
+            const tickRate = 50;
+            state.timer = setInterval(() => {
+                state.timerValue -= tickRate;
+                const pct = (state.timerValue / state.maxTime) * 100;
+                ui.timerBar.style.width = `${pct}%`;
+
+                // Change color if low
+                if (pct < 30) ui.timerBar.className = 'h-full bg-red-500 w-full';
+
+                if (state.timerValue <= 0) {
+                    handleMistake("TIME UP");
+                }
+            }, tickRate);
+        }
+
+        function handleInput(r, c, el) {
+            if (state.status !== 'INPUT') return;
+
+            const target = state.path[state.inputIndex];
+
+            // Feedback Animation
+            el.classList.remove('active');
+            void el.offsetWidth; // trigger reflow
+
+            if (r === target.r && c === target.c) {
+                // Correct
+                el.classList.add('success');
+                el.classList.add('correct');
+                el.style.pointerEvents = 'none';
+                playTone(400 + (state.inputIndex * 50), 'triangle', 0.1);
+                
+                setTimeout(() => el.classList.remove('success'), 200);
+                
+                state.inputIndex++;
+
+                if (state.inputIndex >= state.path.length) {
+                    completeLevel();
+                }
+            } else {
+                // Wrong
+                el.classList.add('error');
+                playTone(150, 'sawtooth', 0.3);
+                setTimeout(() => el.classList.remove('error'), 400);
+                handleMistake("WRONG");
+            }
+        }
+
+        function handleMistake(reason) {
+            clearInterval(state.timer);
+
+            // Add sound for Time Up
+            if (reason === "TIME UP") {
+                playTone(100, 'sawtooth', 0.5);
+            }
+
+            state.status = 'FAIL';
+            
+            state.player.hearts--;
+            updateHUD();
+
+            ui.statusText.textContent = "PATH";
+            ui.statusText.className = "text-sm font-bold text-yellow-300 uppercase tracking-wider";
+
+            revealPathBriefly(state.inputIndex, () => {
+                if (state.player.hearts <= 0) {
+                    gameOver();
+                    return;
+                }
+
+                // Brief pause then replay pattern
+                ui.statusText.textContent = "TRY AGAIN";
+                ui.statusText.className = "text-sm font-bold text-red-500 uppercase tracking-wider";
+                setTimeout(() => {
+                    startLevel(); // Re-generates a new path? OR replay same? 
+                    // PRD doesn't strictly say. Let's regenerate to keep it fresh and prevent pure memorization of a failed run.
+                    // Actually, replaying the sequence helps memory. Let's keep the same level settings but generating a new path is easier code-wise 
+                    // and prevents frustration if the path was just "hard".
+                }, 300);
+            });
+        }
+
+        function completeLevel() {
+            clearInterval(state.timer);
+            state.status = 'SUCCESS';
+            
+            // Calculate Score
+            // Score = base + timeBonus + stageBonus
+            // Score = 10 + (time fraction * 10) + (stageIndex * 5)
+            const baseScore = CONFIG.baseScorePerLevel;
+            const timeBonus = Math.floor((state.timerValue / state.maxTime) * 10);
+            const stageBonus = state.player.stageIndex * 5;
+            const levelScore = baseScore + timeBonus + stageBonus;
+            state.player.score += levelScore;
+            
+            updateHUD();
+
+            // Show Overlay
+            ui.overlayTitle.textContent = "LEVEL COMPLETE";
+            ui.overlayBaseScore.textContent = `+${baseScore}`;
+            ui.overlayTimeBonus.textContent = `+${timeBonus}`;
+            ui.overlayStageBonus.textContent = `+${stageBonus}`;
+            ui.overlayTotalScore.textContent = `+${levelScore}`;
+            ui.btnNext.textContent = "NEXT LEVEL";
+            ui.overlay.classList.remove('hidden');
+
+            playTone(800, 'sine', 0.1);
+            setTimeout(() => playTone(1200, 'sine', 0.1), 100);
+        }
+
+        function nextLevel() {
+            state.player.levelIndex++;
+            
+            // Check for Stage Progression
+            if (state.player.levelIndex >= CONFIG.stages[state.player.stageIndex].levels) {
+                state.player.stageIndex++;
+                state.player.levelIndex = 0;
+                
+                // Check for Game Completion
+                if (state.player.stageIndex >= CONFIG.stages.length) {
+                    victory();
+                    return;
+                }
+
+                showStageIntro();
+                return;
+            }
+
+            updateHUD(); 
+            startLevel();
+        }
+
+        function gameOver() {
+            state.status = 'GAMEOVER';
+            saveScore(state.player.name, state.player.score, state.player.stageIndex, state.player.levelIndex);
+            
+            ui.finalScore.textContent = state.player.score;
+            showScreen('game-over');
+        }
+
+        function victory() {
+            state.status = 'GAMEOVER';
+            saveScore(
+                state.player.name,
+                state.player.score,
+                CONFIG.stages.length - 1,
+                CONFIG.stages[CONFIG.stages.length - 1].levels - 1
+            );
+            
+            ui.finalScore.textContent = state.player.score;
+            document.querySelector('#game-over-screen h2').textContent = "VICTORY!";
+            document.querySelector('#game-over-screen h2').className = "text-4xl font-black text-green-500 mb-2";
+            document.querySelector('#game-over-screen div.text-6xl').textContent = "🏆";
+            document.querySelector('#game-over-screen p').textContent = "You completed all stages!";
+            
+            showScreen('game-over');
+        }
+
+        /**
+         * PERSISTENCE & LEADERBOARD
+         */
+        function getLeaderboard() {
+            const data = localStorage.getItem(CONFIG.localStorageKey);
+            return data ? JSON.parse(data) : [];
+        }
+
+        function saveScore(name, score, stageIndex, levelIndex) {
+            let lb = getLeaderboard();
+            const stage = Number.isInteger(stageIndex) ? stageIndex + 1 : null;
+            const level = Number.isInteger(levelIndex) ? levelIndex + 1 : null;
+            
+            // Check if user exists, update if score higher
+            const existingIndex = lb.findIndex(entry => entry.name === name);
+            if (existingIndex > -1) {
+                if (score > lb[existingIndex].score) {
+                    lb[existingIndex].score = score;
+                    lb[existingIndex].stage = stage;
+                    lb[existingIndex].level = level;
+                    lb[existingIndex].date = new Date().toISOString();
+                }
+            } else {
+                lb.push({ name, score, stage, level, date: new Date().toISOString() });
+            }
+
+            // Sort
+            lb.sort((a, b) => b.score - a.score);
+            
+            // Limit size
+            lb = lb.slice(0, 50);
+
+            localStorage.setItem(CONFIG.localStorageKey, JSON.stringify(lb));
+            updateMiniHighScore();
+        }
+
+        function updateMiniHighScore() {
+            const lb = getLeaderboard();
+            const high = lb.length > 0 ? lb[0].score : 0;
+            ui.highScoreMini.textContent = `HI: ${high}`;
+        }
+
+        function showLeaderboard() {
+            const lb = getLeaderboard();
+            ui.leaderboardBody.innerHTML = '';
+            
+            if (lb.length === 0) {
+                ui.leaderboardBody.innerHTML = '<tr><td colspan="4" class="p-4 text-center text-gray-500">No scores yet. Be the first!</td></tr>';
+            } else {
+                lb.forEach((entry, idx) => {
+                    const row = document.createElement('tr');
+                    row.className = idx < 3 ? 'text-yellow-400 font-bold bg-gray-700/30 border-b border-gray-700' : 'text-gray-300 border-b border-gray-700';
+                    const icon = idx === 0 ? '👑 ' : (idx === 1 ? '🥈 ' : (idx === 2 ? '🥉 ' : ''));
+                    const stageText = entry.stage ? `S${entry.stage}` : '--';
+                    const levelText = entry.level ? `L${entry.level}` : '--';
+                    
+                    row.innerHTML = `
+                        <td class="p-3">${icon}#${idx + 1}</td>
+                        <td class="p-3 truncate max-w-[120px]">${entry.name}</td>
+                        <td class="p-3 font-mono">${stageText} ${levelText}</td>
+                        <td class="p-3 text-right font-mono">${entry.score}</td>
+                    `;
+                    ui.leaderboardBody.appendChild(row);
+                });
+            }
+            screens.leaderboard.classList.remove('hidden');
+        }
+
+        function hideLeaderboard() {
+            screens.leaderboard.classList.add('hidden');
+        }
+
+        function resetData() {
+            if(confirm("Clear all leaderboard data? This cannot be undone.")) {
+                localStorage.removeItem(CONFIG.localStorageKey);
+                showLeaderboard(); // Refresh view
+                updateMiniHighScore();
+            }
+        }
+
+        /**
+         * UTILS & AUDIO
+         */
+        function showScreen(screenName) {
+            Object.values(screens).forEach(s => s.classList.add('hidden'));
+            if (screenName === 'menu') screens.menu.classList.remove('hidden');
+            if (screenName === 'stage') screens.stage.classList.remove('hidden');
+            if (screenName === 'game') screens.game.classList.remove('hidden');
+            if (screenName === 'game-over') screens.gameOver.classList.remove('hidden');
+
+            if (screenName === 'game') {
+                ui.header.classList.remove('hidden');
+            } else {
+                ui.header.classList.add('hidden');
+            }
+        }
+
+        // Simple Web Audio API for feedback
+        const AudioContext = window.AudioContext || window.webkitAudioContext;
+        const audioCtx = new AudioContext();
+
+        function playTone(freq, type, duration) {
+            if (audioCtx.state === 'suspended') audioCtx.resume();
+            
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+            
+            osc.type = type;
+            osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
+            
+            gain.gain.setValueAtTime(0.1, audioCtx.currentTime);
+            gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + duration);
+            
+            osc.connect(gain);
+            gain.connect(audioCtx.destination);
+            
+            osc.start();
+            osc.stop(audioCtx.currentTime + duration);
+        }
+
+        // Init
+        init();
+
+    </script>
+</body>
+</html>
