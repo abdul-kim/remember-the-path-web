@@ -259,7 +259,7 @@
             </div>
 
             <!-- LEADERBOARD SCREEN -->
-            <div id="leaderboard-screen" class="hidden absolute inset-0 z-30 bg-gray-900 flex flex-col p-6">
+            <div id="leaderboard-screen" class="hidden absolute inset-0 z-30 flex flex-col p-6">
                 <div class="flex justify-between items-center mb-6">
                     <h2 class="text-2xl font-bold text-white">Leaderboard</h2>
                     <button id="btn-close-leaderboard" class="bg-gray-700 hover:bg-gray-600 text-gray-200 text-xs font-semibold uppercase tracking-wider py-2 px-3 rounded-md border border-gray-600 shadow">Close</button>
@@ -320,11 +320,68 @@
             ],
             initialHearts: 3,
             baseScorePerLevel: 10,
-            playbackSpeedBase: 300, // ms per square
-            playbackSpeedMin: 100,  // Cap for speed
-            playbackSpeedIncrement: 50, // ms decrease per stage
-            turnTimeBase: 1.5, // Seconds per square for input
-            mistakeRevealMs: 2500,
+            scoring: {
+                timeBonusMultiplier: 10,
+                stageBonusMultiplier: 5
+            },
+            playback: {
+                speedBaseMs: 300, // ms per square
+                speedMinMs: 100,  // Cap for speed
+                speedDecrementPerStageMs: 50, // ms decrease per stage
+                startDelayMs: 800,
+                gapRatio: 0.5,
+                toneBaseHz: 300,
+                toneStepHz: 50,
+                toneDurationSec: 0.1
+            },
+            input: {
+                timePerSquareBaseSec: 1.5, // Seconds per square for input
+                timePerSquareMinSec: 0.8,
+                timePerSquareStagePenaltySec: 0.1,
+                tickRateMs: 50,
+                lowTimeThresholdPct: 30,
+                successClearMs: 200,
+                errorClearMs: 400,
+                retryDelayMs: 300,
+                correctToneBaseHz: 400,
+                correctToneStepHz: 50,
+                correctToneDurationSec: 0.1,
+                wrongToneHz: 150,
+                wrongToneDurationSec: 0.3,
+                timeUpToneHz: 100,
+                timeUpToneDurationSec: 0.5
+            },
+            reveal: {
+                mistakeMs: 2500
+            },
+            path: {
+                minTurnsAtLevelZero: 0,
+                minTurnsPerLevelOffset: 1,
+                lengthBase: 4,
+                lengthSizeDivisor: 2,
+                attemptLimit: 20,
+                fallbackMinLength: 3,
+                fallbackMaxLength: 4,
+                fallbackRow: 0
+            },
+            audio: {
+                gainStart: 0.1,
+                gainEnd: 0.01,
+                successToneFreqsHz: [800, 1200],
+                successToneDelayMs: 100,
+                successToneDurationSec: 0.1
+            },
+            ui: {
+                heartFontSizeRem: 1.25
+            },
+            leaderboard: {
+                maxEntries: 50,
+                highlightTopCount: 3,
+                topRankIcons: ['👑', '🥈', '🥉']
+            },
+            timing: {
+                msPerSecond: 1000
+            },
             stageDifficulty: [
                 'Easy Peasy, Lemon Squeezy',
                 'Still Easy',
@@ -398,16 +455,19 @@
          */
         const PathGenerator = {
             generate(size, levelIndex) {
-                // Determine complexity based on levelIndex (0-4)
-                // Level 0: Straight line (0 turns)
-                // Level 4: Complex (Many turns)
-                const minTurns = levelIndex === 0 ? 0 : levelIndex + 1; 
-                const length = Math.min(size * size, 4 + levelIndex + Math.floor(size/2)); 
+                // Determine complexity based on levelIndex and CONFIG.path tuning.
+                const minTurns = levelIndex === 0
+                    ? CONFIG.path.minTurnsAtLevelZero
+                    : levelIndex + CONFIG.path.minTurnsPerLevelOffset;
+                const length = Math.min(
+                    size * size,
+                    CONFIG.path.lengthBase + levelIndex + Math.floor(size / CONFIG.path.lengthSizeDivisor)
+                );
 
                 let bestPath = [];
 
                 // Try multiple times to find a valid path that meets criteria
-                for(let attempt = 0; attempt < 20; attempt++) {
+                for(let attempt = 0; attempt < CONFIG.path.attemptLimit; attempt++) {
                     const startR = Math.floor(Math.random() * size);
                     const startC = Math.floor(Math.random() * size);
                     
@@ -421,10 +481,12 @@
                 }
                 
                 // If backtracking failed to make a long enough path, just make a simple one
-                if (bestPath.length < 3) {
+                if (bestPath.length < CONFIG.path.fallbackMinLength) {
                      // Fallback simple line generator
                      bestPath = [];
-                     for(let i=0; i<Math.min(size, 4); i++) bestPath.push({r:0, c:i});
+                     for(let i=0; i<Math.min(size, CONFIG.path.fallbackMaxLength); i++) {
+                         bestPath.push({r: CONFIG.path.fallbackRow, c: i});
+                     }
                 }
 
                 return bestPath;
@@ -434,7 +496,7 @@
                 const stack = [{ r, c, path: [{r,c}], turns: 0, lastDir: null }];
                 
                 // DFS for path generation
-                // Note: Iterative DFS to avoid stack overflow, though recursion is fine for 8x8
+                // Note: Iterative DFS to avoid stack overflow, though recursion is fine for the configured grid sizes
                 // Using a simplified randomized DFS
                 
                 return this.recursiveWalk(size, r, c, [], null, 0, targetLength, minTurns);
@@ -561,7 +623,7 @@
                 const heart = document.createElement('span');
                 heart.innerHTML = '&#10084;'; // Heart entity
                 heart.className = i < state.player.hearts ? 'text-red-500 animate-pulse' : 'text-gray-700';
-                heart.style.fontSize = '1.25rem';
+                heart.style.fontSize = `${CONFIG.ui.heartFontSizeRem}rem`;
                 ui.heartsContainer.appendChild(heart);
             }
         }
@@ -585,7 +647,7 @@
             state.path = PathGenerator.generate(stageConfig.size, state.player.levelIndex);
 
             // 3. Playback Sequence
-            setTimeout(() => playSequence(), 800);
+            setTimeout(() => playSequence(), CONFIG.playback.startDelayMs);
         }
 
         function renderGrid(size) {
@@ -619,7 +681,10 @@
 
         async function playSequence() {
             // Speed Calculation: Faster as stages progress
-            const speed = Math.max(CONFIG.playbackSpeedMin, CONFIG.playbackSpeedBase - (state.player.stageIndex * CONFIG.playbackSpeedIncrement));
+            const speed = Math.max(
+                CONFIG.playback.speedMinMs,
+                CONFIG.playback.speedBaseMs - (state.player.stageIndex * CONFIG.playback.speedDecrementPerStageMs)
+            );
             
             for (let i = 0; i < state.path.length; i++) {
                 const {r, c} = state.path[i];
@@ -627,13 +692,17 @@
                 
                 // Highlight
                 el.classList.add('active');
-                playTone(300 + (i*50), 'sine', 0.1); // Audio feedback
+                playTone(
+                    CONFIG.playback.toneBaseHz + (i * CONFIG.playback.toneStepHz),
+                    'sine',
+                    CONFIG.playback.toneDurationSec
+                ); // Audio feedback
                 
                 await new Promise(res => setTimeout(res, speed));
                 
                 // Unhighlight (keep a small gap if it's the same cell - though path gen usually moves)
                 el.classList.remove('active');
-                await new Promise(res => setTimeout(res, speed * 0.5));
+                await new Promise(res => setTimeout(res, speed * CONFIG.playback.gapRatio));
             }
 
             beginInputPhase();
@@ -688,7 +757,7 @@
                 ui.pathLine.style.transition = 'none';
                 void ui.pathLine.getBoundingClientRect();
                 ui.pathOverlay.classList.remove('hidden');
-                ui.pathLine.style.transition = `stroke-dashoffset ${CONFIG.mistakeRevealMs}ms ease-out`;
+                ui.pathLine.style.transition = `stroke-dashoffset ${CONFIG.reveal.mistakeMs}ms ease-out`;
                 ui.pathLine.style.strokeDashoffset = '0';
             }
 
@@ -713,7 +782,7 @@
                 if (typeof onDone === 'function') {
                     onDone();
                 }
-            }, CONFIG.mistakeRevealMs);
+            }, CONFIG.reveal.mistakeMs);
         }
 
         function beginInputPhase() {
@@ -724,20 +793,23 @@
 
             // Timer Setup
             // Time depends on path length + complexity
-            const timePerSquare = Math.max(0.8, CONFIG.turnTimeBase - (state.player.stageIndex * 0.1));
-            state.maxTime = state.path.length * timePerSquare * 1000; 
+            const timePerSquare = Math.max(
+                CONFIG.input.timePerSquareMinSec,
+                CONFIG.input.timePerSquareBaseSec - (state.player.stageIndex * CONFIG.input.timePerSquareStagePenaltySec)
+            );
+            state.maxTime = state.path.length * timePerSquare * CONFIG.timing.msPerSecond;
             state.timerValue = state.maxTime;
             
             if (state.timer) clearInterval(state.timer);
             
-            const tickRate = 50;
+            const tickRate = CONFIG.input.tickRateMs;
             state.timer = setInterval(() => {
                 state.timerValue -= tickRate;
                 const pct = (state.timerValue / state.maxTime) * 100;
                 ui.timerBar.style.width = `${pct}%`;
 
                 // Change color if low
-                if (pct < 30) ui.timerBar.className = 'h-full bg-red-500 w-full';
+                if (pct < CONFIG.input.lowTimeThresholdPct) ui.timerBar.className = 'h-full bg-red-500 w-full';
 
                 if (state.timerValue <= 0) {
                     handleMistake("TIME UP");
@@ -759,9 +831,13 @@
                 el.classList.add('success');
                 el.classList.add('correct');
                 el.style.pointerEvents = 'none';
-                playTone(400 + (state.inputIndex * 50), 'triangle', 0.1);
+                playTone(
+                    CONFIG.input.correctToneBaseHz + (state.inputIndex * CONFIG.input.correctToneStepHz),
+                    'triangle',
+                    CONFIG.input.correctToneDurationSec
+                );
                 
-                setTimeout(() => el.classList.remove('success'), 200);
+                setTimeout(() => el.classList.remove('success'), CONFIG.input.successClearMs);
                 
                 state.inputIndex++;
 
@@ -771,8 +847,8 @@
             } else {
                 // Wrong
                 el.classList.add('error');
-                playTone(150, 'sawtooth', 0.3);
-                setTimeout(() => el.classList.remove('error'), 400);
+                playTone(CONFIG.input.wrongToneHz, 'sawtooth', CONFIG.input.wrongToneDurationSec);
+                setTimeout(() => el.classList.remove('error'), CONFIG.input.errorClearMs);
                 handleMistake("WRONG");
             }
         }
@@ -782,7 +858,7 @@
 
             // Add sound for Time Up
             if (reason === "TIME UP") {
-                playTone(100, 'sawtooth', 0.5);
+                playTone(CONFIG.input.timeUpToneHz, 'sawtooth', CONFIG.input.timeUpToneDurationSec);
             }
 
             state.status = 'FAIL';
@@ -807,7 +883,7 @@
                     // PRD doesn't strictly say. Let's regenerate to keep it fresh and prevent pure memorization of a failed run.
                     // Actually, replaying the sequence helps memory. Let's keep the same level settings but generating a new path is easier code-wise 
                     // and prevents frustration if the path was just "hard".
-                }, 300);
+                }, CONFIG.input.retryDelayMs);
             });
         }
 
@@ -816,11 +892,10 @@
             state.status = 'SUCCESS';
             
             // Calculate Score
-            // Score = base + timeBonus + stageBonus
-            // Score = 10 + (time fraction * 10) + (stageIndex * 5)
+            // Score = base + time bonus + stage bonus (using CONFIG.scoring multipliers)
             const baseScore = CONFIG.baseScorePerLevel;
-            const timeBonus = Math.floor((state.timerValue / state.maxTime) * 10);
-            const stageBonus = state.player.stageIndex * 5;
+            const timeBonus = Math.floor((state.timerValue / state.maxTime) * CONFIG.scoring.timeBonusMultiplier);
+            const stageBonus = state.player.stageIndex * CONFIG.scoring.stageBonusMultiplier;
             const levelScore = baseScore + timeBonus + stageBonus;
             state.player.score += levelScore;
             
@@ -835,8 +910,14 @@
             ui.btnNext.textContent = "NEXT LEVEL";
             ui.overlay.classList.remove('hidden');
 
-            playTone(800, 'sine', 0.1);
-            setTimeout(() => playTone(1200, 'sine', 0.1), 100);
+            if (CONFIG.audio.successToneFreqsHz.length > 0) {
+                playTone(CONFIG.audio.successToneFreqsHz[0], 'sine', CONFIG.audio.successToneDurationSec);
+            }
+            if (CONFIG.audio.successToneFreqsHz.length > 1) {
+                setTimeout(() => {
+                    playTone(CONFIG.audio.successToneFreqsHz[1], 'sine', CONFIG.audio.successToneDurationSec);
+                }, CONFIG.audio.successToneDelayMs);
+            }
         }
 
         function nextLevel() {
@@ -917,7 +998,7 @@
             lb.sort((a, b) => b.score - a.score);
             
             // Limit size
-            lb = lb.slice(0, 50);
+            lb = lb.slice(0, CONFIG.leaderboard.maxEntries);
 
             localStorage.setItem(CONFIG.localStorageKey, JSON.stringify(lb));
             updateMiniHighScore();
@@ -938,8 +1019,12 @@
             } else {
                 lb.forEach((entry, idx) => {
                     const row = document.createElement('tr');
-                    row.className = idx < 3 ? 'text-yellow-400 font-bold bg-gray-700/30 border-b border-gray-700' : 'text-gray-300 border-b border-gray-700';
-                    const icon = idx === 0 ? '👑 ' : (idx === 1 ? '🥈 ' : (idx === 2 ? '🥉 ' : ''));
+                    row.className = idx < CONFIG.leaderboard.highlightTopCount
+                        ? 'text-yellow-400 font-bold bg-gray-700/30 border-b border-gray-700'
+                        : 'text-gray-300 border-b border-gray-700';
+                    const icon = CONFIG.leaderboard.topRankIcons[idx]
+                        ? `${CONFIG.leaderboard.topRankIcons[idx]} `
+                        : '';
                     const stageText = entry.stage ? `S${entry.stage}` : '--';
                     const levelText = entry.level ? `L${entry.level}` : '--';
                     
@@ -997,8 +1082,8 @@
             osc.type = type;
             osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
             
-            gain.gain.setValueAtTime(0.1, audioCtx.currentTime);
-            gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + duration);
+            gain.gain.setValueAtTime(CONFIG.audio.gainStart, audioCtx.currentTime);
+            gain.gain.exponentialRampToValueAtTime(CONFIG.audio.gainEnd, audioCtx.currentTime + duration);
             
             osc.connect(gain);
             gain.connect(audioCtx.destination);
