@@ -120,6 +120,85 @@
             filter: drop-shadow(0 0 6px rgba(245, 158, 11, 0.6));
         }
 
+        .howto-card {
+            background: rgba(17, 24, 39, 0.92);
+            border: 1px solid #374151;
+            border-radius: 16px;
+            padding: 16px;
+            box-shadow: 0 12px 30px rgba(0, 0, 0, 0.35);
+            animation: howto-rise 0.55s ease both;
+        }
+
+        .howto-step {
+            font-size: 10px;
+            letter-spacing: 0.28em;
+            text-transform: uppercase;
+            color: #64748b;
+        }
+
+        .howto-visual {
+            background: #0b1220;
+            border: 1px solid #1f2937;
+            border-radius: 14px;
+            padding: 14px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .howto-grid {
+            display: grid;
+            grid-template-columns: repeat(4, minmax(0, 1fr));
+            gap: 6px;
+            width: 140px;
+            height: 140px;
+        }
+
+        .howto-cell {
+            position: relative;
+            border-radius: 6px;
+            background: #1f2937;
+            border: 1px solid #334155;
+            transition: background-color 0.2s ease, box-shadow 0.2s ease;
+        }
+
+        .howto-cell.is-watch {
+            background: #38bdf8;
+            box-shadow: 0 0 12px rgba(56, 189, 248, 0.65);
+        }
+
+        .howto-cell.is-repeat {
+            background: #4ade80;
+            box-shadow: 0 0 12px rgba(74, 222, 128, 0.65);
+        }
+
+        .howto-timer {
+            width: 100%;
+            height: 10px;
+            background: #1f2937;
+            border-radius: 999px;
+            overflow: hidden;
+            border: 1px solid #334155;
+        }
+
+        .howto-timer span {
+            display: block;
+            height: 100%;
+            width: 70%;
+            background: linear-gradient(90deg, #38bdf8, #60a5fa);
+            animation: howto-sweep 2.8s ease-in-out infinite;
+        }
+
+        .howto-hearts {
+            display: flex;
+            gap: 6px;
+        }
+
+        .howto-heart {
+            width: 20px;
+            height: 20px;
+        }
+
         @keyframes shake {
             10%, 90% { transform: translate3d(-1px, 0, 0); }
             20%, 80% { transform: translate3d(2px, 0, 0); }
@@ -132,8 +211,23 @@
             100% { background-position: 200% 50%; }
         }
 
+        @keyframes howto-rise {
+            from { opacity: 0; transform: translateY(8px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        @keyframes howto-sweep {
+            0%, 100% { width: 92%; }
+            50% { width: 35%; }
+        }
+
         @media (prefers-reduced-motion: reduce) {
             .menu-title {
+                animation: none;
+            }
+
+            .howto-card,
+            .howto-timer span {
                 animation: none;
             }
         }
@@ -206,6 +300,7 @@
                         <input type="text" id="player-name" class="w-full bg-gray-800 border border-gray-700 rounded p-3 text-white focus:outline-none focus:border-blue-500 transition" placeholder="Enter name" maxlength="10">
                     </div>
                     <button id="btn-start" class="w-full bg-blue-600 hover:bg-blue-500 text-white font-bold py-3 px-4 rounded shadow-lg transform transition active:scale-95">START GAME</button>
+                    <button id="btn-howto" class="w-full bg-gray-700 hover:bg-gray-600 text-gray-200 font-semibold py-3 px-4 rounded shadow transform transition active:scale-95">HOW TO PLAY</button>
                     <button id="btn-leaderboard" class="w-full bg-gray-700 hover:bg-gray-600 text-gray-300 font-semibold py-3 px-4 rounded shadow transform transition active:scale-95">LEADERBOARD</button>
                 </div>
             </div>
@@ -215,11 +310,15 @@
                 <div class="text-center space-y-2">
                     <div class="text-xs text-gray-500 uppercase tracking-widest"></div>
                     <h2 id="stage-title" class="text-4xl font-extrabold text-white">STAGE 1</h2>
-                    <div class="text-sm text-gray-400">Levels: <span id="stage-level-count">5</span></div>
                 </div>
-                <div class="bg-gray-800 border border-gray-700 rounded-xl p-4 w-full max-w-xs text-center">
+                <div class="w-full max-w-xs bg-gray-800/70 border border-gray-700 rounded-lg p-4 text-center">
                     <div class="text-sm text-gray-500 uppercase tracking-widest mb-1">Difficulty</div>
                     <div id="stage-difficulty" class="text-2xl font-bold text-amber-400">Piece of Cake</div>
+                    <div class="mt-4 w-24 mx-auto border-t border-gray-700"></div>
+                    <div class="mt-3">
+                        <div class="text-sm text-gray-500 uppercase tracking-widest">Levels</div>
+                        <span id="stage-level-count" class="text-2xl font-bold text-amber-400">5</span>
+                    </div>
                 </div>
                 <button id="btn-stage-start" class="w-full max-w-xs bg-blue-600 hover:bg-blue-500 text-white font-bold py-3 px-4 rounded shadow-lg transform transition active:scale-95">START STAGE</button>
             </div>
@@ -250,7 +349,7 @@
                         </div>
                         <div class="space-y-1 text-sm">
                             <div class="flex justify-between">
-                                <span class="text-gray-300">Level Pass</span>
+                                <span class="text-gray-300">Level Cleared</span>
                                 <span id="overlay-score-base" class="font-mono text-yellow-300">+0</span>
                             </div>
                             <div class="flex justify-between">
@@ -297,6 +396,135 @@
                 </div>
             </div>
 
+            <!-- HOW TO PLAY SCREEN -->
+            <div id="howto-screen" class="hidden absolute inset-0 z-30 flex flex-col p-6">
+                <div class="flex items-start justify-between gap-4 mb-5">
+                    <div>
+                        <h2 class="text-3xl font-extrabold text-white mt-1">How To Play</h2>
+                        <p class="text-sm text-gray-400 mt-1 max-w-sm">Watch the pattern, tap it back, and outrun the timer.</p>
+                    </div>
+                    <button id="btn-close-howto" class="bg-gray-700 hover:bg-gray-600 text-gray-200 text-xs font-semibold uppercase tracking-wider py-2 px-3 rounded-md border border-gray-600 shadow">Back</button>
+                </div>
+                <div class="flex-1 overflow-y-auto custom-scroll pr-2">
+                    <div class="space-y-4 max-w-md mx-auto">
+                        <div class="howto-card" style="animation-delay: 0.05s;">
+                            <div class="flex items-center justify-between mb-3">
+                                <div class="howto-step">Step 1</div>
+                                <div class="text-xs text-sky-300 font-semibold uppercase tracking-widest">Watch</div>
+                            </div>
+                            <div class="flex flex-col sm:flex-row gap-4 items-center">
+                                <div class="howto-visual">
+                                    <div class="howto-grid" data-howto="watch">
+                                        <div class="howto-cell" data-watch-step="1"></div>
+                                        <div class="howto-cell" data-watch-step="2"></div>
+                                        <div class="howto-cell"></div>
+                                        <div class="howto-cell"></div>
+                                        <div class="howto-cell"></div>
+                                        <div class="howto-cell" data-watch-step="3"></div>
+                                        <div class="howto-cell" data-watch-step="4"></div>
+                                        <div class="howto-cell"></div>
+                                        <div class="howto-cell"></div>
+                                        <div class="howto-cell"></div>
+                                        <div class="howto-cell" data-watch-step="5"></div>
+                                        <div class="howto-cell"></div>
+                                        <div class="howto-cell"></div>
+                                        <div class="howto-cell"></div>
+                                        <div class="howto-cell" data-watch-step="6"></div>
+                                        <div class="howto-cell" data-watch-step="7"></div>
+                                    </div>
+                                </div>
+                                <p class="text-sm text-gray-300 leading-relaxed">The path flashes once. Memorize it and get ready to repeat it.</p>
+                            </div>
+                        </div>
+                        <div class="howto-card" style="animation-delay: 0.12s;">
+                            <div class="flex items-center justify-between mb-3">
+                                <div class="howto-step">Step 2</div>
+                                <div class="text-xs text-emerald-300 font-semibold uppercase tracking-widest">Repeat</div>
+                            </div>
+                            <div class="flex flex-col sm:flex-row gap-4 items-center">
+                                <div class="howto-visual">
+                                    <div class="howto-grid" data-howto="repeat">
+                                        <div class="howto-cell" data-repeat-step="1"></div>
+                                        <div class="howto-cell" data-repeat-step="2"></div>
+                                        <div class="howto-cell"></div>
+                                        <div class="howto-cell"></div>
+                                        <div class="howto-cell"></div>
+                                        <div class="howto-cell" data-repeat-step="3"></div>
+                                        <div class="howto-cell" data-repeat-step="4"></div>
+                                        <div class="howto-cell"></div>
+                                        <div class="howto-cell"></div>
+                                        <div class="howto-cell"></div>
+                                        <div class="howto-cell" data-repeat-step="5"></div>
+                                        <div class="howto-cell"></div>
+                                        <div class="howto-cell"></div>
+                                        <div class="howto-cell"></div>
+                                        <div class="howto-cell" data-repeat-step="6"></div>
+                                        <div class="howto-cell" data-repeat-step="7"></div>
+                                    </div>
+                                </div>
+                                <p class="text-sm text-gray-300 leading-relaxed">Tap the same squares in order. A wrong tap costs a heart.</p>
+                            </div>
+                        </div>
+                        <div class="howto-card" style="animation-delay: 0.19s;">
+                            <div class="flex items-center justify-between mb-3">
+                                <div class="howto-step">Step 3</div>
+                                <div class="text-xs text-amber-300 font-semibold uppercase tracking-widest">Survive</div>
+                            </div>
+                            <div class="flex flex-col sm:flex-row gap-4 items-center">
+                                <div class="howto-visual w-full">
+                                    <div class="w-full space-y-3">
+                                        <div class="howto-timer"><span></span></div>
+                                        <div class="flex items-center justify-between text-[11px] uppercase tracking-widest text-gray-400">
+                                            <span>Time</span>
+                                            <span>Hearts</span>
+                                        </div>
+                                        <div class="flex items-center justify-between">
+                                            <div class="flex-1"></div>
+                                            <div class="howto-hearts">
+                                                <svg class="howto-heart text-red-500" viewBox="0 0 24 24" aria-hidden="true">
+                                                    <path fill="currentColor" d="M12 21s-6.713-4.477-9.6-8.23C.46 10.357.999 7.07 3.044 5.25 4.94 3.57 7.62 3.78 9.272 5.49L12 8.323l2.728-2.834c1.652-1.71 4.333-1.92 6.229-.24 2.045 1.82 2.584 5.107.644 7.52C18.713 16.523 12 21 12 21z"></path>
+                                                </svg>
+                                                <svg class="howto-heart text-red-500" viewBox="0 0 24 24" aria-hidden="true">
+                                                    <path fill="currentColor" d="M12 21s-6.713-4.477-9.6-8.23C.46 10.357.999 7.07 3.044 5.25 4.94 3.57 7.62 3.78 9.272 5.49L12 8.323l2.728-2.834c1.652-1.71 4.333-1.92 6.229-.24 2.045 1.82 2.584 5.107.644 7.52C18.713 16.523 12 21 12 21z"></path>
+                                                </svg>
+                                                <svg class="howto-heart text-gray-600" viewBox="0 0 24 24" aria-hidden="true">
+                                                    <path fill="currentColor" d="M12 21s-6.713-4.477-9.6-8.23C.46 10.357.999 7.07 3.044 5.25 4.94 3.57 7.62 3.78 9.272 5.49L12 8.323l2.728-2.834c1.652-1.71 4.333-1.92 6.229-.24 2.045 1.82 2.584 5.107.644 7.52C18.713 16.523 12 21 12 21z"></path>
+                                                </svg>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <p class="text-sm text-gray-300 leading-relaxed">Beat the timer before it drains. Misses cost hearts and three strikes ends the run.</p>
+                            </div>
+                        </div>
+                        <div class="howto-card" style="animation-delay: 0.26s;">
+                            <div class="flex items-center justify-between mb-3">
+                                <div class="howto-step">Scoring</div>
+                                <div class="text-xs text-yellow-300 font-semibold uppercase tracking-widest">Points</div>
+                            </div>
+                            <div class="space-y-2 text-sm text-gray-300">
+                                <div class="flex justify-between">
+                                    <span>Points per level</span>
+                                    <span id="howto-score-base" class="font-mono text-yellow-300">+0</span>
+                                </div>
+                                <div class="flex justify-between">
+                                    <span>Time bonus range</span>
+                                    <span id="howto-score-time" class="font-mono text-yellow-300">0-0</span>
+                                </div>
+                                <div class="flex justify-between">
+                                    <span>Stage bonus</span>
+                                    <span id="howto-score-stage" class="font-mono text-yellow-300">stage number × 0</span>
+                                </div>
+                            </div>
+                            <div id="howto-score-formula" class="mt-3 text-xs text-gray-400"></div>
+                        </div>
+                        <div class="bg-gray-800/70 border border-gray-700 rounded-xl p-4 text-xs text-gray-400 leading-relaxed">
+                            Tip: The faster you complete a level, the more points you earn.
+                        </div>
+                    </div>
+                </div>
+            </div>
+
             <!-- GAME OVER SCREEN -->
             <div id="game-over-screen" class="hidden absolute inset-0 z-30 flex flex-col items-center justify-center p-6 text-center">
                 <h2 id="game-over-title" class="text-4xl font-black text-red-500 mb-2">GAME OVER</h2>
@@ -325,7 +553,7 @@
         /**
          * CONFIGURATION
          */
-        const APP_VERSION = 'v1.0.4';
+        const APP_VERSION = 'v1.0.5';
 
         const CONFIG = {
             stages: [
@@ -338,7 +566,7 @@
             initialHearts: 3,
             baseScorePerLevel: 10,
             scoring: {
-                timeBonusMultiplier: 10,
+                timeBonusMultiplier: 5,
                 stageBonusMultiplier: 5
             },
             playback: {
@@ -449,12 +677,18 @@
             maxTime: 0
         };
 
+        const howtoTimers = {
+            watch: null,
+            repeat: null
+        };
+
         // DOM Elements
         const screens = {
             menu: document.getElementById('menu-screen'),
             stage: document.getElementById('stage-screen'),
             game: document.getElementById('game-container'),
             leaderboard: document.getElementById('leaderboard-screen'),
+            howto: document.getElementById('howto-screen'),
             gameOver: document.getElementById('game-over-screen')
         };
         
@@ -601,13 +835,18 @@
             
             // Event Listeners
             document.getElementById('btn-start').addEventListener('click', startGame);
+            document.getElementById('btn-howto').addEventListener('click', showHowTo);
             document.getElementById('btn-leaderboard').addEventListener('click', showLeaderboard);
             document.getElementById('btn-close-leaderboard').addEventListener('click', hideLeaderboard);
+            document.getElementById('btn-close-howto').addEventListener('click', hideHowTo);
             document.getElementById('btn-reset-data').addEventListener('click', resetData);
             document.getElementById('btn-next-level').addEventListener('click', nextLevel);
             document.getElementById('btn-stage-start').addEventListener('click', startStage);
             document.getElementById('btn-retry').addEventListener('click', restartGame);
             document.getElementById('btn-home').addEventListener('click', goHome);
+
+            initHowToAnimations();
+            updateHowToScoreDetails();
         }
 
         function startGame() {
@@ -631,6 +870,89 @@
             ui.stageInfo.classList.add('hidden');
             ui.scoreDisplay.classList.add('hidden');
             ui.highScoreMini.classList.add('hidden');
+        }
+
+        function showHowTo() {
+            showScreen('howto');
+        }
+
+        function hideHowTo() {
+            showScreen('menu');
+        }
+
+        function initHowToAnimations() {
+            const watchCells = Array.from(document.querySelectorAll('[data-watch-step]'))
+                .sort((a, b) => Number(a.dataset.watchStep) - Number(b.dataset.watchStep));
+            const repeatCells = Array.from(document.querySelectorAll('[data-repeat-step]'))
+                .sort((a, b) => Number(a.dataset.repeatStep) - Number(b.dataset.repeatStep));
+
+            if (!watchCells.length || !repeatCells.length) return;
+
+            const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+            if (prefersReducedMotion) {
+                watchCells.forEach(cell => cell.classList.add('is-watch'));
+                repeatCells.forEach(cell => cell.classList.add('is-repeat'));
+                return;
+            }
+
+            if (howtoTimers.watch) clearTimeout(howtoTimers.watch);
+            if (howtoTimers.repeat) clearTimeout(howtoTimers.repeat);
+
+            const watchStepMs = 350;
+            const watchPulseMs = 220;
+            const watchPauseMs = 450;
+
+            const runWatch = () => {
+                watchCells.forEach((cell, index) => {
+                    setTimeout(() => {
+                        cell.classList.add('is-watch');
+                        setTimeout(() => cell.classList.remove('is-watch'), watchPulseMs);
+                    }, index * watchStepMs);
+                });
+
+                const totalMs = ((watchCells.length - 1) * watchStepMs) + watchPulseMs + watchPauseMs;
+                howtoTimers.watch = setTimeout(runWatch, totalMs);
+            };
+
+            const repeatStepMs = 350;
+            const repeatHoldMs = 650;
+            const repeatResetMs = 450;
+
+            const runRepeat = () => {
+                repeatCells.forEach((cell, index) => {
+                    setTimeout(() => {
+                        cell.classList.add('is-repeat');
+                    }, index * repeatStepMs);
+                });
+
+                const clearAtMs = ((repeatCells.length - 1) * repeatStepMs) + repeatHoldMs;
+                setTimeout(() => {
+                    repeatCells.forEach(cell => cell.classList.remove('is-repeat'));
+                }, clearAtMs);
+
+                howtoTimers.repeat = setTimeout(runRepeat, clearAtMs + repeatResetMs);
+            };
+
+            runWatch();
+            runRepeat();
+        }
+
+        function updateHowToScoreDetails() {
+            const baseEl = document.getElementById('howto-score-base');
+            const timeEl = document.getElementById('howto-score-time');
+            const stageEl = document.getElementById('howto-score-stage');
+            const formulaEl = document.getElementById('howto-score-formula');
+
+            if (!baseEl || !timeEl || !stageEl || !formulaEl) return;
+
+            const baseScore = CONFIG.baseScorePerLevel;
+            const timeBonusMax = CONFIG.scoring.timeBonusMultiplier;
+            const stageBonusStep = CONFIG.scoring.stageBonusMultiplier;
+
+            baseEl.textContent = `${baseScore}`;
+            timeEl.textContent = `1-${timeBonusMax}`;
+            stageEl.textContent = `stage number × ${stageBonusStep}`;
+            // formulaEl.textContent = `Score per level = ${baseScore} + floor(remaining time percentage × ${timeBonusMax}) + (stage number × ${stageBonusStep})`;
         }
 
         function showStageIntro() {
@@ -990,8 +1312,8 @@
             // Calculate Score
             // Score = base + time bonus + stage bonus (using CONFIG.scoring multipliers)
             const baseScore = CONFIG.baseScorePerLevel;
-            const timeBonus = Math.floor((state.timerValue / state.maxTime) * CONFIG.scoring.timeBonusMultiplier);
-            const stageBonus = state.player.stageIndex * CONFIG.scoring.stageBonusMultiplier;
+            const timeBonus = 1 + Math.floor((state.timerValue / state.maxTime) * CONFIG.scoring.timeBonusMultiplier);
+            const stageBonus = (state.player.stageIndex + 1) * CONFIG.scoring.stageBonusMultiplier;
             const levelScore = baseScore + timeBonus + stageBonus;
             state.player.score += levelScore;
             
@@ -1175,6 +1497,7 @@
             if (screenName === 'menu') screens.menu.classList.remove('hidden');
             if (screenName === 'stage') screens.stage.classList.remove('hidden');
             if (screenName === 'game') screens.game.classList.remove('hidden');
+            if (screenName === 'howto') screens.howto.classList.remove('hidden');
             if (screenName === 'game-over') screens.gameOver.classList.remove('hidden');
 
             if (screenName === 'game') {
