@@ -64,6 +64,10 @@
         .cell {
             transition: all 0.2s ease;
         }
+
+        .grid-locked {
+            pointer-events: none;
+        }
         
         .cell.active {
             background-color: #38bdf8; /* Sky 400 */
@@ -553,7 +557,7 @@
         /**
          * CONFIGURATION
          */
-        const APP_VERSION = 'v1.0.5';
+        const APP_VERSION = 'v1.0.6';
 
         const CONFIG = {
             stages: [
@@ -1097,6 +1101,10 @@
             ui.grid.style.gridTemplateRows = `repeat(${size}, ${cellSize}px)`;
         }
 
+        function setGridInteractivity(enabled) {
+            ui.grid.classList.toggle('grid-locked', !enabled);
+        }
+
         async function playSequence() {
             // Speed Calculation: Faster as stages progress
             const speed = Math.max(
@@ -1170,6 +1178,7 @@
         function revealPathBriefly(startIndex, onDone) {
             const start = Math.max(0, startIndex || 0);
             const hasLine = updateRevealPathLine(start);
+            setGridInteractivity(false);
 
             if (hasLine) {
                 ui.pathLine.style.transition = 'none';
@@ -1197,6 +1206,7 @@
                     ui.pathLine.style.strokeDashoffset = length;
                     ui.pathOverlay.classList.add('hidden');
                 }
+                setGridInteractivity(true);
                 if (typeof onDone === 'function') {
                     onDone();
                 }
