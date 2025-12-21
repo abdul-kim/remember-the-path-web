@@ -671,7 +671,7 @@
         /**
          * CONFIGURATION
          */
-        const APP_VERSION = 'v1.0.9';
+        const APP_VERSION = 'v1.0.10';
 
         const CONFIG = {
             stages: [
@@ -699,8 +699,8 @@
             },
             input: {
                 timePerSquareBaseSec: 1.5, // Seconds per square for input
-                timePerSquareMinSec: 0.8,
-                timePerSquareStagePenaltySec: 0.1,
+                timePerSquareMinSec: 0.5,  // Cap for time per square
+                timePerSquareStagePenaltySec: 0.3, // Seconds reduced per stage
                 tickRateMs: 50,
                 lowTimeThresholdPct: 30,
                 successClearMs: 200,
