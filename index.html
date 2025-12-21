@@ -298,10 +298,10 @@
             </div>
 
             <!-- GAME OVER SCREEN -->
-            <div id="game-over-screen" class="hidden absolute inset-0 z-30 bg-gray-900/95 flex flex-col items-center justify-center p-6 text-center backdrop-blur-md">
-                <h2 class="text-4xl font-black text-red-500 mb-2">GAME OVER</h2>
-                <div class="text-6xl mb-2">💀</div>
-                <p class="text-gray-300 mb-6">You ran out of hearts.</p>
+            <div id="game-over-screen" class="hidden absolute inset-0 z-30 flex flex-col items-center justify-center p-6 text-center">
+                <h2 id="game-over-title" class="text-4xl font-black text-red-500 mb-2">GAME OVER</h2>
+                <div id="game-over-mark" class="text-2xl font-semibold text-gray-200 mb-2">Good try!</div>
+                <p id="game-over-description" class="text-gray-300 mb-6">You ran out of hearts.</p>
                 
                 <div class="bg-gray-800 rounded-lg p-6 w-full max-w-xs mb-6 border border-gray-700">
                     <div class="text-xs text-gray-500 uppercase tracking-widest mb-1">Final Score</div>
@@ -325,7 +325,7 @@
         /**
          * CONFIGURATION
          */
-        const APP_VERSION = 'v1.0.3';
+        const APP_VERSION = 'v1.0.4';
 
         const CONFIG = {
             stages: [
@@ -386,7 +386,19 @@
                 gainEnd: 0.01,
                 successToneFreqsHz: [800, 1200],
                 successToneDelayMs: 100,
-                successToneDurationSec: 0.1
+                successToneDurationSec: 0.1,
+                stageIntroToneType: 'sine',
+                stageIntroToneFreqsHz: [420, 520],
+                stageIntroToneDelayMs: 140,
+                stageIntroToneDurationSec: 0.12,
+                gameOverToneType: 'sawtooth',
+                gameOverToneFreqsHz: [200, 140],
+                gameOverToneDelayMs: 120,
+                gameOverToneDurationSec: 0.25,
+                victoryToneType: 'triangle',
+                victoryToneFreqsHz: [523, 659, 784],
+                victoryToneDelayMs: 120,
+                victoryToneDurationSec: 0.15
             },
             ui: {
                 heartFontSizeRem: 1.25
@@ -400,12 +412,19 @@
                 msPerSecond: 1000
             },
             stageDifficulty: [
-                'Easy Peasy, Lemon Squeezy',
-                'Still Easy',
+                'Piece of Cake',
+                'Kinda Easy',
                 '6 7 Difficulty',
-                'Okay Now...',
+                'Uh Oh...',
                 'Hold Up...',
                 'God Mode!'
+            ],
+            gameOverMessages: [
+                'Good try!',
+                'So close!',
+                'Nice effort!',
+                'Not bad!',
+                'That was good!'
             ],
             localStorageKey: 'ftp_leaderboard_v1'
         };
@@ -464,8 +483,15 @@
             stageDifficulty: document.getElementById('stage-difficulty'),
             playerNameInput: document.getElementById('player-name'),
             finalScore: document.getElementById('final-score'),
-            leaderboardBody: document.getElementById('leaderboard-body')
+            leaderboardBody: document.getElementById('leaderboard-body'),
+            gameOverTitle: document.getElementById('game-over-title'),
+            gameOverMark: document.getElementById('game-over-mark'),
+            gameOverDescription: document.getElementById('game-over-description')
         };
+        const GAME_OVER_TITLE_CLASS = 'text-4xl font-black text-red-500 mb-2';
+        const VICTORY_TITLE_CLASS = 'text-4xl font-black text-green-500 mb-2';
+        const GAME_OVER_MARK_CLASS = 'text-2xl font-semibold text-gray-200 mb-2';
+        const VICTORY_MARK_CLASS = 'text-6xl mb-2';
 
         /**
          * PATH GENERATION ALGORITHM
@@ -621,6 +647,12 @@
             ui.stageLevelCount.textContent = stageConfig.levels;
             ui.stageDifficulty.textContent = difficulty;
             showScreen('stage');
+            playToneSequence(
+                CONFIG.audio.stageIntroToneFreqsHz,
+                CONFIG.audio.stageIntroToneType,
+                CONFIG.audio.stageIntroToneDurationSec,
+                CONFIG.audio.stageIntroToneDelayMs
+            );
         }
 
         function startStage() {
@@ -1011,7 +1043,19 @@
             saveScore(state.player.name, state.player.score, state.player.stageIndex, state.player.levelIndex);
             
             ui.finalScore.textContent = state.player.score;
+            ui.gameOverTitle.textContent = 'GAME OVER';
+            ui.gameOverTitle.className = GAME_OVER_TITLE_CLASS;
+            const messages = Array.isArray(CONFIG.gameOverMessages) ? CONFIG.gameOverMessages : [];
+            ui.gameOverMark.textContent = messages.length ? getRandomItem(messages) : 'Good try!';
+            ui.gameOverMark.className = GAME_OVER_MARK_CLASS;
+            ui.gameOverDescription.textContent = 'You ran out of hearts.';
             showScreen('game-over');
+            playToneSequence(
+                CONFIG.audio.gameOverToneFreqsHz,
+                CONFIG.audio.gameOverToneType,
+                CONFIG.audio.gameOverToneDurationSec,
+                CONFIG.audio.gameOverToneDelayMs
+            );
         }
 
         function victory() {
@@ -1024,12 +1068,19 @@
             );
             
             ui.finalScore.textContent = state.player.score;
-            document.querySelector('#game-over-screen h2').textContent = "VICTORY!";
-            document.querySelector('#game-over-screen h2').className = "text-4xl font-black text-green-500 mb-2";
-            document.querySelector('#game-over-screen div.text-6xl').textContent = "🏆";
-            document.querySelector('#game-over-screen p').textContent = "You completed all stages!";
+            ui.gameOverTitle.textContent = 'VICTORY!';
+            ui.gameOverTitle.className = VICTORY_TITLE_CLASS;
+            ui.gameOverMark.textContent = '🏆';
+            ui.gameOverMark.className = VICTORY_MARK_CLASS;
+            ui.gameOverDescription.textContent = 'You completed all stages!';
             
             showScreen('game-over');
+            playToneSequence(
+                CONFIG.audio.victoryToneFreqsHz,
+                CONFIG.audio.victoryToneType,
+                CONFIG.audio.victoryToneDurationSec,
+                CONFIG.audio.victoryToneDelayMs
+            );
         }
 
         /**
@@ -1154,6 +1205,19 @@
             
             osc.start();
             osc.stop(audioCtx.currentTime + duration);
+        }
+        
+        function playToneSequence(freqs, type, duration, delayMs) {
+            if (!Array.isArray(freqs) || freqs.length === 0) return;
+            freqs.forEach((freq, index) => {
+                setTimeout(() => {
+                    playTone(freq, type, duration);
+                }, index * delayMs);
+            });
+        }
+
+        function getRandomItem(items) {
+            return items[Math.floor(Math.random() * items.length)];
         }
 
         // Init
