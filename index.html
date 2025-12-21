@@ -302,6 +302,8 @@
             </div>
 
         </main>
+
+        <div id="app-version" class="absolute bottom-2 right-3 text-[10px] text-gray-700 uppercase tracking-widest pointer-events-none"></div>
     </div>
 
     <!-- AUDIO ELEMENTS (Simple synthesizers used in JS, fallback placeholders here) -->
@@ -310,6 +312,8 @@
         /**
          * CONFIGURATION
          */
+        const APP_VERSION = 'v1.0.0';
+
         const CONFIG = {
             stages: [
                 { id: 1, size: 4, levels: 3 },
@@ -550,6 +554,9 @@
          * GAME LOGIC
          */
         function init() {
+            const appVersionEl = document.getElementById('app-version');
+            if (appVersionEl) appVersionEl.textContent = APP_VERSION;
+
             // Load High Score
             updateMiniHighScore();
             
