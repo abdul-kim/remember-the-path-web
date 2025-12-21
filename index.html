@@ -142,6 +142,19 @@
         .timer-bar {
             transition: width 0.1s linear;
         }
+
+        .heart-icon {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            line-height: 1;
+        }
+
+        .heart-icon svg {
+            width: 1em;
+            height: 1em;
+            display: block;
+        }
     </style>
 </head>
 <body class="bg-gray-900 text-white h-screen flex flex-col overflow-hidden">
@@ -312,7 +325,7 @@
         /**
          * CONFIGURATION
          */
-        const APP_VERSION = 'v1.0.2';
+        const APP_VERSION = 'v1.0.3';
 
         const CONFIG = {
             stages: [
@@ -628,8 +641,14 @@
             ui.heartsContainer.innerHTML = '';
             for (let i = 0; i < CONFIG.initialHearts; i++) {
                 const heart = document.createElement('span');
-                heart.innerHTML = '&#10084;'; // Heart entity
-                heart.className = i < state.player.hearts ? 'text-red-500 animate-pulse' : 'text-gray-700';
+                heart.innerHTML = `
+                    <svg viewBox="0 0 24 24" aria-hidden="true">
+                        <path fill="currentColor" d="M12 21s-6.713-4.477-9.6-8.23C.46 10.357.999 7.07 3.044 5.25 4.94 3.57 7.62 3.78 9.272 5.49L12 8.323l2.728-2.834c1.652-1.71 4.333-1.92 6.229-.24 2.045 1.82 2.584 5.107.644 7.52C18.713 16.523 12 21 12 21z"></path>
+                    </svg>
+                `;
+                heart.className = i < state.player.hearts
+                    ? 'heart-icon text-red-500 animate-pulse'
+                    : 'heart-icon text-gray-700';
                 heart.style.fontSize = `${CONFIG.ui.heartFontSizeRem}rem`;
                 ui.heartsContainer.appendChild(heart);
             }
