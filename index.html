@@ -65,6 +65,12 @@
             transition: all 0.2s ease;
         }
 
+        @media (hover: none) {
+            .cell:hover {
+                background-color: #374151; /* Match bg-gray-700 to avoid sticky hover on touch */
+            }
+        }
+
         .grid-locked {
             pointer-events: none;
         }
@@ -557,7 +563,7 @@
         /**
          * CONFIGURATION
          */
-        const APP_VERSION = 'v1.0.6';
+        const APP_VERSION = 'v1.0.7';
 
         const CONFIG = {
             stages: [
@@ -1026,6 +1032,7 @@
             
             // 1. Generate Grid
             renderGrid(stageConfig.size);
+            setGridInteractivity(false);
 
             // 2. Generate Path
             state.path = PathGenerator.generate(stageConfig.size, state.player.levelIndex);
@@ -1218,6 +1225,7 @@
             ui.statusText.textContent = "YOUR TURN";
             ui.statusText.className = "text-sm font-bold text-green-400 uppercase tracking-wider animate-pulse";
             ui.timerBar.className = 'h-full bg-green-500 w-full';
+            setGridInteractivity(true);
 
             // Timer Setup
             // Time depends on path length + complexity
