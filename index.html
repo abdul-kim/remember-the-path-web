@@ -12,6 +12,9 @@
             font-family: 'Inter', sans-serif;
             touch-action: manipulation; /* Prevent double-tap zoom */
             user-select: none;
+            --grid-size: 48px;
+            --ambient-step: 0.8s;
+            --ambient-duration: 20s;
         }
 
         body::before {
@@ -21,26 +24,31 @@
             background:
                 linear-gradient(to right, rgba(148, 163, 184, 0.12) 1px, transparent 1px),
                 linear-gradient(to bottom, rgba(148, 163, 184, 0.12) 1px, transparent 1px);
-            background-size: 48px 48px;
+            background-size: var(--grid-size) var(--grid-size);
             opacity: 0.6;
             pointer-events: none;
             z-index: 0;
         }
 
-        body::after {
-            content: "";
+        #ambient-paths {
             position: fixed;
             inset: 0;
-            background:
-                radial-gradient(300px 300px at 50% 55%, rgba(56, 189, 248, 0.10) 0%, transparent 70%),
-                radial-gradient(22px 22px at 46% 47%, rgba(56, 189, 248, 0.45) 0%, transparent 70%),
-                radial-gradient(22px 22px at 54% 47%, rgba(59, 130, 246, 0.38) 0%, transparent 70%),
-                radial-gradient(22px 22px at 50% 54%, rgba(56, 189, 248, 0.40) 0%, transparent 70%),
-                radial-gradient(22px 22px at 58% 58%, rgba(59, 130, 246, 0.32) 0%, transparent 70%),
-                radial-gradient(22px 22px at 42% 58%, rgba(56, 189, 248, 0.30) 0%, transparent 70%);
-            opacity: 0.7;
             pointer-events: none;
             z-index: 0;
+        }
+
+        .ambient-square {
+            position: absolute;
+            width: var(--grid-size);
+            height: var(--grid-size);
+            left: calc(var(--grid-size) * var(--x));
+            top: calc(var(--grid-size) * var(--y));
+            border-radius: 8px;
+            background: rgba(56, 189, 248, 0.22);
+            box-shadow: 0 0 0 rgba(56, 189, 248, 0);
+            opacity: 0;
+            animation: ambient-glow var(--duration, var(--ambient-duration)) linear infinite;
+            animation-delay: calc(var(--delay, 0s) + (var(--order) * var(--ambient-step)));
         }
 
         #app {
@@ -231,6 +239,29 @@
             50% { width: 35%; }
         }
 
+        @keyframes ambient-glow {
+            0% {
+                opacity: 0;
+                box-shadow: 0 0 0 rgba(56, 189, 248, 0);
+            }
+            1.5% {
+                opacity: 0.35;
+                box-shadow: 0 0 18px rgba(56, 189, 248, 0.5);
+            }
+            3% {
+                opacity: 0.18;
+                box-shadow: 0 0 10px rgba(56, 189, 248, 0.3);
+            }
+            4% {
+                opacity: 0;
+                box-shadow: 0 0 0 rgba(56, 189, 248, 0);
+            }
+            100% {
+                opacity: 0;
+                box-shadow: 0 0 0 rgba(56, 189, 248, 0);
+            }
+        }
+
         @media (prefers-reduced-motion: reduce) {
             .menu-title {
                 animation: none;
@@ -239,6 +270,12 @@
             .howto-card,
             .howto-timer span {
                 animation: none;
+            }
+
+            .ambient-square {
+                animation: none;
+                opacity: 0.12;
+                box-shadow: 0 0 10px rgba(56, 189, 248, 0.25);
             }
         }
 
@@ -262,6 +299,7 @@
     </style>
 </head>
 <body class="bg-gray-900 text-white h-screen flex flex-col overflow-hidden">
+    <div id="ambient-paths" aria-hidden="true"></div>
 
     <!-- Game Container -->
     <div id="app" class="flex-1 flex flex-col relative max-w-lg mx-auto w-full h-full">
@@ -301,7 +339,6 @@
             <div id="menu-screen" class="absolute inset-0 z-20 flex flex-col items-center justify-center p-6 space-y-6">
                 <div class="text-center space-y-3">
                     <h1 id="menu-title" class="menu-title">REMEMBER THE PATH</h1>
-                    <p class="text-gray-400 text-sm max-w-xs mx-auto">Memorize the pattern. Repeat it exactly. Don't run out of time.</p>
                 </div>
                 
                 <div class="w-full max-w-xs space-y-4">
@@ -504,12 +541,12 @@
                                         </div>
                                     </div>
                                 </div>
-                                <p class="text-sm text-gray-300 leading-relaxed">Beat the timer before it drains. Misses cost hearts and three strikes ends the run.</p>
+                                <p class="text-sm text-gray-300 leading-relaxed">Beat the timer before it drains. Running out of hearts ends the run.</p>
                             </div>
                         </div>
                         <div class="howto-card" style="animation-delay: 0.26s;">
                             <div class="flex items-center justify-between mb-3">
-                                <div class="howto-step">Scoring</div>
+                                <div class="howto-step">Criteria</div>
                                 <div class="text-xs text-yellow-300 font-semibold uppercase tracking-widest">Points</div>
                             </div>
                             <div class="space-y-2 text-sm text-gray-300">
@@ -563,7 +600,7 @@
         /**
          * CONFIGURATION
          */
-        const APP_VERSION = 'v1.0.7';
+        const APP_VERSION = 'v1.0.8';
 
         const CONFIG = {
             stages: [
@@ -834,11 +871,148 @@
         };
 
         /**
+         * AMBIENT PATHS
+         */
+        const AMBIENT_PATHS = {
+            minPaths: 3,
+            maxPaths: 6,
+            minLength: 10,
+            maxLength: 22,
+            minStartDistance: 4,
+            pauseSec: 2.4
+        };
+
+        let ambientResizeTimer = null;
+        let ambientRefreshTimer = null;
+
+        function setupAmbientPaths() {
+            const container = document.getElementById('ambient-paths');
+            if (!container) return;
+
+            const style = getComputedStyle(document.body);
+            const gridSize = parseFloat(style.getPropertyValue('--grid-size')) || 48;
+            const stepSec = parseCssTime(style.getPropertyValue('--ambient-step'), 0.8);
+            const baseDuration = parseCssTime(style.getPropertyValue('--ambient-duration'), 20);
+
+            const cols = Math.max(8, Math.floor(window.innerWidth / gridSize));
+            const rows = Math.max(10, Math.floor(window.innerHeight / gridSize));
+            const area = cols * rows;
+            const pathCount = clamp(Math.round(area / 60), AMBIENT_PATHS.minPaths, AMBIENT_PATHS.maxPaths);
+
+            container.innerHTML = '';
+
+            let maxDuration = 0;
+            let maxDelay = 0;
+            const starts = [];
+            for (let i = 0; i < pathCount; i++) {
+                starts.push(pickAmbientStart(cols, rows, starts, AMBIENT_PATHS.minStartDistance));
+            }
+
+            starts.forEach(start => {
+                const length = clamp(
+                    getRandomInt(AMBIENT_PATHS.minLength, AMBIENT_PATHS.maxLength),
+                    6,
+                    cols * rows
+                );
+                const step = stepSec * (0.8 + Math.random() * 0.45);
+                const duration = Math.max(baseDuration, (length * step) + AMBIENT_PATHS.pauseSec);
+                const delay = Math.random() * 3;
+                const path = buildAmbientPath(cols, rows, length, start);
+
+                maxDuration = Math.max(maxDuration, duration);
+                maxDelay = Math.max(maxDelay, delay);
+
+                path.forEach((point, index) => {
+                    const square = document.createElement('span');
+                    square.className = 'ambient-square';
+                    square.style.setProperty('--x', point.x);
+                    square.style.setProperty('--y', point.y);
+                    square.style.setProperty('--order', index);
+                    square.style.setProperty('--duration', `${duration.toFixed(2)}s`);
+                    square.style.setProperty('--delay', `${delay.toFixed(2)}s`);
+                    container.appendChild(square);
+                });
+            });
+
+            if (ambientRefreshTimer) clearTimeout(ambientRefreshTimer);
+            const refreshMs = Math.max(12000, Math.ceil((maxDuration + maxDelay + 1) * 1000));
+            ambientRefreshTimer = setTimeout(setupAmbientPaths, refreshMs);
+        }
+
+        function buildAmbientPath(cols, rows, length, start) {
+            const path = [start];
+            const used = new Set([coordKey(start)]);
+            let current = start;
+            let prev = null;
+
+            for (let i = 1; i < length; i++) {
+                const neighbors = [
+                    { x: current.x + 1, y: current.y },
+                    { x: current.x - 1, y: current.y },
+                    { x: current.x, y: current.y + 1 },
+                    { x: current.x, y: current.y - 1 }
+                ].filter(point => point.x >= 0 && point.x < cols && point.y >= 0 && point.y < rows);
+
+                let options = neighbors;
+                if (prev) {
+                    options = options.filter(point => point.x !== prev.x || point.y !== prev.y);
+                }
+                const fresh = options.filter(point => !used.has(coordKey(point)));
+                if (fresh.length) options = fresh;
+                if (!options.length) options = neighbors;
+
+                const next = options[Math.floor(Math.random() * options.length)];
+                path.push(next);
+                used.add(coordKey(next));
+                prev = current;
+                current = next;
+            }
+
+            return path;
+        }
+
+        function pickAmbientStart(cols, rows, starts, minDistance) {
+            for (let attempt = 0; attempt < 40; attempt++) {
+                const candidate = { x: getRandomInt(0, cols - 1), y: getRandomInt(0, rows - 1) };
+                const isFar = starts.every(start =>
+                    Math.abs(start.x - candidate.x) + Math.abs(start.y - candidate.y) >= minDistance
+                );
+                if (isFar) return candidate;
+            }
+            return { x: getRandomInt(0, cols - 1), y: getRandomInt(0, rows - 1) };
+        }
+
+        function parseCssTime(value, fallbackSec) {
+            const raw = String(value || '').trim();
+            const num = parseFloat(raw);
+            if (!Number.isFinite(num)) return fallbackSec;
+            return raw.endsWith('ms') ? num / 1000 : num;
+        }
+
+        function getRandomInt(min, max) {
+            return Math.floor(Math.random() * (max - min + 1)) + min;
+        }
+
+        function coordKey(point) {
+            return `${point.x},${point.y}`;
+        }
+
+        function clamp(value, min, max) {
+            return Math.min(max, Math.max(min, value));
+        }
+
+        /**
          * GAME LOGIC
          */
         function init() {
             const appVersionEl = document.getElementById('app-version');
             if (appVersionEl) appVersionEl.textContent = APP_VERSION;
+
+            setupAmbientPaths();
+            window.addEventListener('resize', () => {
+                if (ambientResizeTimer) clearTimeout(ambientResizeTimer);
+                ambientResizeTimer = setTimeout(setupAmbientPaths, 150);
+            });
 
             // Load High Score
             updateMiniHighScore();
