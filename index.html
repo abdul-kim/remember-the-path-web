@@ -473,7 +473,7 @@
                             <span id="overlay-score-total" class="font-mono text-yellow-300">+0</span>
                         </div>
                     </div>
-                    <button id="btn-next-level" class="bg-green-600 hover:bg-green-500 text-white font-bold py-2 px-6 rounded-full shadow-lg transform transition active:scale-95">NEXT LEVEL</button>
+                    <button id="btn-next-level" class="bg-green-600 hover:bg-green-500 text-white font-bold py-2 px-6 rounded-full shadow-lg transform transition active:scale-95 hidden">NEXT LEVEL</button>
                 </div>
             </div>
 
@@ -671,7 +671,7 @@
         /**
          * CONFIGURATION
          */
-        const APP_VERSION = 'v1.0.12';
+        const APP_VERSION = 'v1.0.13';
 
         const CONFIG = {
             stages: [
@@ -717,6 +717,10 @@
             },
             reveal: {
                 mistakeMs: 2500
+            },
+            levelTransition: {
+                breakdownMs: 2000,
+                levelIntroMs: 900
             },
             path: {
                 minTurnsAtLevelZero: 0, // Initial min turns
@@ -801,6 +805,11 @@
             repeat: null
         };
 
+        const levelTransitionTimers = {
+            breakdown: null,
+            levelIntro: null
+        };
+
         // DOM Elements
         const screens = {
             menu: document.getElementById('menu-screen'),
@@ -823,6 +832,7 @@
             grid: document.getElementById('grid'),
             overlay: document.getElementById('overlay-message'),
             overlayTitle: document.getElementById('overlay-title'),
+            overlayBreakdown: document.getElementById('overlay-breakdown'),
             overlaySubtitle: document.getElementById('overlay-subtitle'),
             overlayBaseScore: document.getElementById('overlay-score-base'),
             overlayTimeBonus: document.getElementById('overlay-score-time'),
@@ -1107,6 +1117,7 @@
         }
 
         function startGame() {
+            clearLevelTransitionTimers();
             const name = ui.playerNameInput.value.trim() || "Player";
             state.player.name = name;
             state.player.score = 0;
@@ -1122,6 +1133,7 @@
         }
 
         function goHome() {
+            clearLevelTransitionTimers();
             showScreen('menu');
             ui.hud.classList.add('hidden');
             ui.stageInfo.classList.add('hidden');
@@ -1253,12 +1265,16 @@
         }
 
         function startStage() {
+            clearLevelTransitionTimers();
             ui.hud.classList.remove('hidden');
             ui.stageInfo.classList.remove('hidden');
             ui.scoreDisplay.classList.remove('hidden');
             ui.highScoreMini.classList.remove('hidden');
             showScreen('game');
-            startLevel();
+            setupLevel({ reusePath: false, hideOverlay: false });
+            showLevelIntro(() => {
+                queuePlayback();
+            });
         }
 
         function updateHUD() {
@@ -1283,8 +1299,61 @@
             }
         }
 
-        function startLevel({ reusePath = false } = {}) {
-            ui.overlay.classList.add('hidden');
+        function clearLevelTransitionTimers() {
+            if (levelTransitionTimers.breakdown) {
+                clearTimeout(levelTransitionTimers.breakdown);
+                levelTransitionTimers.breakdown = null;
+            }
+            if (levelTransitionTimers.levelIntro) {
+                clearTimeout(levelTransitionTimers.levelIntro);
+                levelTransitionTimers.levelIntro = null;
+            }
+        }
+
+        function scheduleLevelTransition() {
+            clearLevelTransitionTimers();
+            ui.btnNext.classList.add('hidden');
+            ui.overlayBreakdown.classList.remove('hidden');
+
+            const stageConfig = CONFIG.stages[state.player.stageIndex];
+            const hasNextLevelInStage = (state.player.levelIndex + 1) < stageConfig.levels;
+            const breakdownMs = CONFIG.levelTransition.breakdownMs;
+
+            levelTransitionTimers.breakdown = setTimeout(() => {
+                if (!hasNextLevelInStage) {
+                    ui.overlay.classList.add('hidden');
+                    nextLevel();
+                    return;
+                }
+
+                state.player.levelIndex++;
+                updateHUD();
+                setupLevel({ reusePath: false, hideOverlay: false });
+                showLevelIntro(() => {
+                    queuePlayback();
+                });
+            }, breakdownMs);
+        }
+
+        function showLevelIntro(onDone) {
+            clearLevelTransitionTimers();
+            ui.btnNext.classList.add('hidden');
+            ui.overlayBreakdown.classList.add('hidden');
+            ui.overlayTitle.textContent = `LEVEL ${state.player.levelIndex + 1}`;
+            ui.overlay.classList.remove('hidden');
+
+            levelTransitionTimers.levelIntro = setTimeout(() => {
+                ui.overlay.classList.add('hidden');
+                if (typeof onDone === 'function') {
+                    onDone();
+                }
+            }, CONFIG.levelTransition.levelIntroMs);
+        }
+
+        function setupLevel({ reusePath = false, hideOverlay = true } = {}) {
+            if (hideOverlay) {
+                ui.overlay.classList.add('hidden');
+            }
             ui.pathOverlay.classList.add('hidden');
             state.status = 'WATCH';
             state.inputIndex = 0;
@@ -1303,9 +1372,16 @@
             if (!reusePath || !Array.isArray(state.path) || state.path.length === 0) {
                 state.path = PathGenerator.generate(stageConfig.size, state.player.levelIndex);
             }
+        }
 
-            // 3. Playback Sequence
+        function queuePlayback() {
             setTimeout(() => playSequence(), CONFIG.playback.startDelayMs);
+        }
+
+        function startLevel({ reusePath = false } = {}) {
+            clearLevelTransitionTimers();
+            setupLevel({ reusePath });
+            queuePlayback();
         }
 
         function renderGrid(size) {
@@ -1614,6 +1690,7 @@
             ui.overlayTotalScore.textContent = `+${levelScore}`;
             ui.btnNext.textContent = "NEXT LEVEL";
             ui.overlay.classList.remove('hidden');
+            ui.overlayBreakdown.classList.remove('hidden');
 
             if (CONFIG.audio.successToneFreqsHz.length > 0) {
                 playTone(CONFIG.audio.successToneFreqsHz[0], 'sine', CONFIG.audio.successToneDurationSec);
@@ -1623,9 +1700,13 @@
                     playTone(CONFIG.audio.successToneFreqsHz[1], 'sine', CONFIG.audio.successToneDurationSec);
                 }, CONFIG.audio.successToneDelayMs);
             }
+
+            scheduleLevelTransition();
         }
 
         function nextLevel() {
+            clearLevelTransitionTimers();
+            ui.overlay.classList.add('hidden');
             state.player.levelIndex++;
             
             // Check for Stage Progression
