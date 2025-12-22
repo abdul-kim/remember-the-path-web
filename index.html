@@ -671,15 +671,16 @@
         /**
          * CONFIGURATION
          */
-        const APP_VERSION = 'v1.0.10';
+        const APP_VERSION = 'v1.0.11';
 
         const CONFIG = {
             stages: [
-                { id: 1, size: 4, levels: 3 },
-                { id: 2, size: 5, levels: 4 },
-                { id: 3, size: 6, levels: 5 },
-                { id: 4, size: 7, levels: 6 },
-                { id: 5, size: 8, levels: 7 },
+                { id: 1, size: 3, levels: 1 },
+                { id: 2, size: 4, levels: 2 },
+                { id: 3, size: 5, levels: 3 },
+                { id: 4, size: 6, levels: 5 },
+                { id: 5, size: 7, levels: 8 },
+                { id: 6, size: 8, levels: 13 },
             ],
             initialHearts: 3,
             baseScorePerLevel: 10,
@@ -689,13 +690,13 @@
             },
             playback: {
                 speedBaseMs: 300, // ms per square
-                speedMinMs: 100,  // Cap for speed
+                speedMinMs: 75,  // Cap for speed
                 speedDecrementPerStageMs: 50, // ms decrease per stage
-                startDelayMs: 800,
-                gapRatio: 0.5,
-                toneBaseHz: 300,
-                toneStepHz: 50,
-                toneDurationSec: 0.1
+                startDelayMs: 800, // Delay before playback starts
+                gapRatio: 0.5, // Gap between tones as ratio of tone duration
+                toneBaseHz: 300, // Starting tone frequency
+                toneStepHz: 50, // Frequency increase per square
+                toneDurationSec: 0.1 // Tone duration in seconds
             },
             input: {
                 timePerSquareBaseSec: 1.5, // Seconds per square for input
@@ -718,14 +719,14 @@
                 mistakeMs: 2500
             },
             path: {
-                minTurnsAtLevelZero: 0,
-                minTurnsPerLevelOffset: 1,
-                lengthBase: 4,
-                lengthSizeDivisor: 2,
-                attemptLimit: 20,
-                fallbackMinLength: 3,
-                fallbackMaxLength: 4,
-                fallbackRow: 0
+                minTurnsAtLevelZero: 0, // Initial min turns
+                minTurnsPerLevelOffset: 1, // Increases min turns as levels progress
+                lengthBase: 4, // Base path length
+                lengthSizeDivisor: 2, // Larger grids yield longer paths
+                attemptLimit: 50, // Max attempts to generate a valid path
+                fallbackMinLength: 3, // Fallback path length if no valid path found
+                fallbackMaxLength: 4, // Fallback path length if no valid path found
+                fallbackRow: 0 // Fallback row to start from if no valid path found
             },
             audio: {
                 gainStart: 0.1,
@@ -1652,7 +1653,7 @@
             const messages = Array.isArray(CONFIG.gameOverMessages) ? CONFIG.gameOverMessages : [];
             ui.gameOverMark.textContent = messages.length ? getRandomItem(messages) : 'Good try!';
             ui.gameOverMark.className = GAME_OVER_MARK_CLASS;
-            ui.gameOverDescription.textContent = 'You ran out of hearts.';
+            ui.gameOverDescription.textContent = 'You ran out of hearts...';
             showScreen('game-over');
             playToneSequence(
                 CONFIG.audio.gameOverToneFreqsHz,
