@@ -1605,6 +1605,7 @@
             if (state.status !== 'INPUT') return;
 
             const target = state.path[state.inputIndex];
+            const isFinalInput = state.inputIndex === state.path.length - 1;
 
             // Feedback Animation
             el.classList.remove('active');
@@ -1621,11 +1622,13 @@
                     CONFIG.input.correctToneDurationSec
                 );
                 
-                setTimeout(() => el.classList.remove('success'), CONFIG.input.successClearMs);
+                if (!isFinalInput) {
+                    setTimeout(() => el.classList.remove('success'), CONFIG.input.successClearMs);
+                }
                 
                 state.inputIndex++;
 
-                if (state.inputIndex >= state.path.length) {
+                if (isFinalInput) {
                     completeLevel();
                 }
             } else {
