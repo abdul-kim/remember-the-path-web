@@ -73,6 +73,10 @@
             transition: all 0.2s ease;
         }
 
+        .grid-no-transitions .cell {
+            transition: none !important;
+        }
+
         @media (hover: none) {
             .cell:hover {
                 background-color: #374151; /* Match bg-gray-700 to avoid sticky hover on touch */
@@ -1377,9 +1381,14 @@
         function clearLevelGrid() {
             setGridInteractivity(false);
             ui.pathOverlay.classList.add('hidden');
+            ui.grid.classList.add('grid-no-transitions');
+            void ui.grid.offsetHeight;
             state.grid.forEach(({ el }) => {
                 el.classList.remove('active', 'error', 'reveal', 'success', 'correct');
                 el.style.pointerEvents = '';
+            });
+            requestAnimationFrame(() => {
+                ui.grid.classList.remove('grid-no-transitions');
             });
         }
 
