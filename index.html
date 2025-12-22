@@ -1379,6 +1379,20 @@
             }
         }
 
+        function finalizeLevelGrid() {
+            setGridInteractivity(false);
+            state.grid.forEach(({ el }) => {
+                el.classList.remove('active', 'error', 'reveal', 'success', 'correct');
+                el.style.pointerEvents = '';
+            });
+            state.path.forEach(({ r, c }) => {
+                const el = getCell(r, c);
+                if (!el) return;
+                el.classList.add('correct');
+                el.style.pointerEvents = 'none';
+            });
+        }
+
         function queuePlayback() {
             setTimeout(() => playSequence(), CONFIG.playback.startDelayMs);
         }
@@ -1686,6 +1700,7 @@
             state.player.score += levelScore;
             
             updateHUD();
+            finalizeLevelGrid();
 
             // Show Overlay
             ui.overlayTitle.textContent = "LEVEL COMPLETE";
@@ -1694,8 +1709,11 @@
             ui.overlayStageBonus.textContent = `+${stageBonus}`;
             ui.overlayTotalScore.textContent = `+${levelScore}`;
             ui.btnNext.textContent = "NEXT LEVEL";
-            ui.overlay.classList.remove('hidden');
-            ui.overlayBreakdown.classList.remove('hidden');
+            requestAnimationFrame(() => {
+                ui.overlay.classList.remove('hidden');
+                ui.overlayBreakdown.classList.remove('hidden');
+                scheduleLevelTransition();
+            });
 
             if (CONFIG.audio.successToneFreqsHz.length > 0) {
                 playTone(CONFIG.audio.successToneFreqsHz[0], 'sine', CONFIG.audio.successToneDurationSec);
@@ -1706,7 +1724,6 @@
                 }, CONFIG.audio.successToneDelayMs);
             }
 
-            scheduleLevelTransition();
         }
 
         function nextLevel() {
