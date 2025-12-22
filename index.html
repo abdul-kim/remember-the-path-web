@@ -1636,7 +1636,16 @@
                 state.inputIndex++;
 
                 if (isFinalInput) {
-                    completeLevel();
+                    state.status = 'SUCCESS';
+                    if (state.timer) {
+                        clearInterval(state.timer);
+                        state.timer = null;
+                    }
+                    requestAnimationFrame(() => {
+                        requestAnimationFrame(() => {
+                            completeLevel();
+                        });
+                    });
                 }
             } else {
                 // Wrong
