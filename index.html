@@ -83,34 +83,29 @@
             pointer-events: none;
         }
         
-        .cell.active,
-        .cell.active:hover {
+        .cell.active {
             background-color: #38bdf8; /* Sky 400 */
             box-shadow: 0 0 15px #38bdf8;
             transform: scale(0.95);
         }
 
-        .cell.success,
-        .cell.success:hover {
+        .cell.success {
             background-color: #4ade80; /* Green 400 */
             box-shadow: 0 0 15px #4ade80;
         }
 
-        .cell.correct,
-        .cell.correct:hover {
+        .cell.correct {
             background-color: #4ade80; /* Green 400 */
             box-shadow: 0 0 15px #4ade80;
         }
 
-        .cell.error,
-        .cell.error:hover {
+        .cell.error {
             background-color: #f87171; /* Red 400 */
             box-shadow: 0 0 15px #f87171;
             animation: shake 0.4s cubic-bezier(.36,.07,.19,.97) both;
         }
 
-        .cell.reveal,
-        .cell.reveal:hover {
+        .cell.reveal {
             background-color: #f59e0b; /* Amber 500 */
             box-shadow: 0 0 15px #f59e0b;
         }
@@ -676,7 +671,7 @@
         /**
          * CONFIGURATION
          */
-        const APP_VERSION = 'v1.0.13';
+        const APP_VERSION = 'v1.0.15';
 
         const CONFIG = {
             stages: [
@@ -1379,17 +1374,12 @@
             }
         }
 
-        function finalizeLevelGrid() {
+        function clearLevelGrid() {
             setGridInteractivity(false);
+            ui.pathOverlay.classList.add('hidden');
             state.grid.forEach(({ el }) => {
                 el.classList.remove('active', 'error', 'reveal', 'success', 'correct');
                 el.style.pointerEvents = '';
-            });
-            state.path.forEach(({ r, c }) => {
-                const el = getCell(r, c);
-                if (!el) return;
-                el.classList.add('correct');
-                el.style.pointerEvents = 'none';
             });
         }
 
@@ -1700,7 +1690,7 @@
             state.player.score += levelScore;
             
             updateHUD();
-            finalizeLevelGrid();
+            clearLevelGrid();
 
             // Show Overlay
             ui.overlayTitle.textContent = "LEVEL COMPLETE";
@@ -1709,11 +1699,8 @@
             ui.overlayStageBonus.textContent = `+${stageBonus}`;
             ui.overlayTotalScore.textContent = `+${levelScore}`;
             ui.btnNext.textContent = "NEXT LEVEL";
-            requestAnimationFrame(() => {
-                ui.overlay.classList.remove('hidden');
-                ui.overlayBreakdown.classList.remove('hidden');
-                scheduleLevelTransition();
-            });
+            ui.overlay.classList.remove('hidden');
+            ui.overlayBreakdown.classList.remove('hidden');
 
             if (CONFIG.audio.successToneFreqsHz.length > 0) {
                 playTone(CONFIG.audio.successToneFreqsHz[0], 'sine', CONFIG.audio.successToneDurationSec);
@@ -1724,6 +1711,7 @@
                 }, CONFIG.audio.successToneDelayMs);
             }
 
+            scheduleLevelTransition();
         }
 
         function nextLevel() {
