@@ -1617,18 +1617,21 @@
 
             if (r === target.r && c === target.c) {
                 // Correct
-                el.classList.add('success');
-                el.classList.add('correct');
+                if (isFinalInput) {
+                    ui.grid.classList.add('grid-static');
+                    el.style.transition = 'none';
+                    el.classList.add('correct');
+                } else {
+                    el.classList.add('success');
+                    el.classList.add('correct');
+                    setTimeout(() => el.classList.remove('success'), CONFIG.input.successClearMs);
+                }
                 el.style.pointerEvents = 'none';
                 playTone(
                     CONFIG.input.correctToneBaseHz + (state.inputIndex * CONFIG.input.correctToneStepHz),
                     'triangle',
                     CONFIG.input.correctToneDurationSec
                 );
-                
-                if (!isFinalInput) {
-                    setTimeout(() => el.classList.remove('success'), CONFIG.input.successClearMs);
-                }
                 
                 state.inputIndex++;
 
