@@ -671,7 +671,7 @@
         /**
          * CONFIGURATION
          */
-        const APP_VERSION = 'v1.0.11';
+        const APP_VERSION = 'v1.0.12';
 
         const CONFIG = {
             stages: [
@@ -1283,7 +1283,7 @@
             }
         }
 
-        function startLevel() {
+        function startLevel({ reusePath = false } = {}) {
             ui.overlay.classList.add('hidden');
             ui.pathOverlay.classList.add('hidden');
             state.status = 'WATCH';
@@ -1299,8 +1299,10 @@
             renderGrid(stageConfig.size);
             setGridInteractivity(false);
 
-            // 2. Generate Path
-            state.path = PathGenerator.generate(stageConfig.size, state.player.levelIndex);
+            // 2. Generate Path (unless reusing after a mistake)
+            if (!reusePath || !Array.isArray(state.path) || state.path.length === 0) {
+                state.path = PathGenerator.generate(stageConfig.size, state.player.levelIndex);
+            }
 
             // 3. Playback Sequence
             setTimeout(() => playSequence(), CONFIG.playback.startDelayMs);
@@ -1450,6 +1452,7 @@
         function revealPathBriefly(startIndex, onDone) {
             const start = Math.max(0, startIndex || 0);
             const hasLine = updateRevealPathLine(start);
+            const completedCells = state.path.slice(0, start).map(({r, c}) => getCell(r, c)).filter(Boolean);
             setGridInteractivity(false);
 
             if (hasLine) {
@@ -1471,6 +1474,10 @@
                     const el = getCell(r, c);
                     if (!el) return;
                     el.classList.remove('reveal');
+                });
+                completedCells.forEach((el) => {
+                    el.classList.remove('correct');
+                    el.style.pointerEvents = '';
                 });
                 if (hasLine) {
                     const length = Number(ui.pathLine.dataset.length || 0);
@@ -1580,10 +1587,7 @@
                 ui.statusText.textContent = "TRY AGAIN";
                 ui.statusText.className = "text-sm font-bold text-red-500 uppercase tracking-wider";
                 setTimeout(() => {
-                    startLevel(); // Re-generates a new path? OR replay same? 
-                    // PRD doesn't strictly say. Let's regenerate to keep it fresh and prevent pure memorization of a failed run.
-                    // Actually, replaying the sequence helps memory. Let's keep the same level settings but generating a new path is easier code-wise 
-                    // and prevents frustration if the path was just "hard".
+                    startLevel({ reusePath: true });
                 }, CONFIG.input.retryDelayMs);
             });
         }
