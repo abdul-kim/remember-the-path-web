@@ -83,29 +83,34 @@
             pointer-events: none;
         }
         
-        .cell.active {
+        .cell.active,
+        .cell.active:hover {
             background-color: #38bdf8; /* Sky 400 */
             box-shadow: 0 0 15px #38bdf8;
             transform: scale(0.95);
         }
 
-        .cell.success {
+        .cell.success,
+        .cell.success:hover {
             background-color: #4ade80; /* Green 400 */
             box-shadow: 0 0 15px #4ade80;
         }
 
-        .cell.correct {
+        .cell.correct,
+        .cell.correct:hover {
             background-color: #4ade80; /* Green 400 */
             box-shadow: 0 0 15px #4ade80;
         }
 
-        .cell.error {
+        .cell.error,
+        .cell.error:hover {
             background-color: #f87171; /* Red 400 */
             box-shadow: 0 0 15px #f87171;
             animation: shake 0.4s cubic-bezier(.36,.07,.19,.97) both;
         }
 
-        .cell.reveal {
+        .cell.reveal,
+        .cell.reveal:hover {
             background-color: #f59e0b; /* Amber 500 */
             box-shadow: 0 0 15px #f59e0b;
         }
