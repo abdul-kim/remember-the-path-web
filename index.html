@@ -82,6 +82,10 @@
         .grid-locked {
             pointer-events: none;
         }
+
+        .grid-static .cell {
+            transition: none;
+        }
         
         .cell.active {
             background-color: #38bdf8; /* Sky 400 */
@@ -671,7 +675,7 @@
         /**
          * CONFIGURATION
          */
-        const APP_VERSION = 'v1.0.13';
+        const APP_VERSION = 'v1.0.14';
 
         const CONFIG = {
             stages: [
@@ -1355,6 +1359,7 @@
                 ui.overlay.classList.add('hidden');
             }
             ui.pathOverlay.classList.add('hidden');
+            ui.grid.classList.remove('grid-static');
             state.status = 'WATCH';
             state.inputIndex = 0;
             ui.statusText.textContent = "WATCH";
@@ -1609,7 +1614,6 @@
 
             // Feedback Animation
             el.classList.remove('active');
-            void el.offsetWidth; // trigger reflow
 
             if (r === target.r && c === target.c) {
                 // Correct
@@ -1674,6 +1678,7 @@
         function completeLevel() {
             clearInterval(state.timer);
             state.status = 'SUCCESS';
+            ui.grid.classList.add('grid-static');
             
             // Calculate Score
             // Score = base + time bonus + stage bonus (using CONFIG.scoring multipliers)
