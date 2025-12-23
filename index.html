@@ -821,8 +821,8 @@
         }
 
         .level-dot {
-            width: 8px;
-            height: 8px;
+            width: 0.65em;
+            height: 0.65em;
             border-radius: 999px;
             transition: transform 0.3s ease, box-shadow 0.3s ease, background-color 0.3s ease, opacity 0.3s ease;
         }
@@ -835,7 +835,7 @@
         .level-dot.current {
             background-color: var(--theme-color);
             box-shadow: 0 0 10px var(--theme-shadow);
-            transform: scale(1.3);
+            transform: scale(1);
         }
 
         .level-dot.upcoming {
@@ -883,7 +883,6 @@
                 <div class="text-right">
                     <div id="score-display" class="hud-score hidden">0</div>
                     <div id="high-score-mini" class="hud-subscore hidden">HI: 0</div>
-                    <div id="level-breadcrumbs" class="flex gap-1.5 mt-1 justify-end"></div>
                 </div>
             </div>
             
@@ -893,7 +892,7 @@
                     <div id="hearts-container" class="flex gap-1">
                         <!-- Hearts injected here -->
                     </div>
-                    <div id="status-text" class="status-chip" data-state="idle">WAIT</div>
+                    <div id="level-breadcrumbs" class="flex gap-1.5 items-center"></div>
                 </div>
                 <!-- Timer Bar -->
                 <div class="w-full h-5 timer-track">
@@ -958,18 +957,6 @@
                 
                 <!-- Overlay for "Level Complete" / "Get Ready" -->
                 <div id="overlay-message" class="absolute inset-0 z-10 overlay-scrim flex flex-col items-center justify-center text-center hidden">
-                    <div id="overlay-intro" class="hidden space-y-3">
-                        <div class="eyebrow font-mono">
-                            <span id="overlay-intro-zone">ZONE 1</span>
-                            <span class="mx-2 text-faint">•</span>
-                            <span id="overlay-intro-stage">STAGE 1</span>
-                        </div>
-                        <div class="flex items-baseline justify-center gap-3">
-                            <h3 id="overlay-intro-level" class="text-6xl font-black title-core">LEVEL 1</h3>
-                            <span id="overlay-intro-total" class="text-2xl font-semibold text-muted">/5</span>
-                        </div>
-                        <div id="overlay-intro-theme" class="eyebrow theme-text">Cyber Blue</div>
-                    </div>
                     <h3 id="overlay-title" class="text-2xl font-bold title-core mb-2">LEVEL COMPLETE</h3>
                     <div id="overlay-breakdown" class="w-full max-w-xs panel-card p-4 mb-5 text-left">
                         <div class="flex justify-between text-[11px] uppercase tracking-[0.32em] text-muted mb-2">
@@ -1196,7 +1183,7 @@
         /**
          * CONFIGURATION
          */
-        const APP_VERSION = 'v1.1.1';
+        const APP_VERSION = 'v1.1.2';
 
         const BASE_STAGES = [
             { id: 1, size: 3, levels: 1 },
@@ -1393,12 +1380,6 @@
             timerBar: document.getElementById('timer-bar'),
             grid: document.getElementById('grid'),
             overlay: document.getElementById('overlay-message'),
-            overlayIntro: document.getElementById('overlay-intro'),
-            overlayIntroZone: document.getElementById('overlay-intro-zone'),
-            overlayIntroStage: document.getElementById('overlay-intro-stage'),
-            overlayIntroLevel: document.getElementById('overlay-intro-level'),
-            overlayIntroTotal: document.getElementById('overlay-intro-total'),
-            overlayIntroTheme: document.getElementById('overlay-intro-theme'),
             overlayTitle: document.getElementById('overlay-title'),
             overlayBreakdown: document.getElementById('overlay-breakdown'),
             overlaySubtitle: document.getElementById('overlay-subtitle'),
@@ -2099,6 +2080,7 @@
             const totalLevels = stageConfig ? stageConfig.levels : 1;
             const currentLevel = state.player.levelIndex;
             if (ui.levelBreadcrumbs) {
+                ui.levelBreadcrumbs.style.fontSize = `${CONFIG.ui.heartFontSizeRem}rem`;
                 ui.levelBreadcrumbs.innerHTML = '';
                 for (let i = 0; i < totalLevels; i++) {
                     const dot = document.createElement('div');
@@ -2132,6 +2114,7 @@
         }
 
         function setStatus(label, stateName) {
+            if (!ui.statusText) return;
             ui.statusText.textContent = label;
             ui.statusText.dataset.state = stateName;
         }
@@ -2207,31 +2190,10 @@
 
         function showLevelIntro(onDone) {
             clearLevelTransitionTimers();
-            ui.btnNext.classList.add('hidden');
-            ui.overlayBreakdown.classList.add('hidden');
-            ui.overlayTitle.classList.add('hidden');
-            if (ui.overlayIntro) ui.overlayIntro.classList.remove('hidden');
-
-            const zoneNumber = state.player.zoneIndex + 1;
-            const stageNumber = state.player.stageIndex + 1;
-            const levelNumber = state.player.levelIndex + 1;
-            const totalLevels = getActiveStageConfig().levels;
-            const zone = getActiveZone();
-            const themeName = zone?.theme?.name || getZoneTitle(zone, state.player.zoneIndex);
-
-            if (ui.overlayIntroZone) ui.overlayIntroZone.textContent = `ZONE ${zoneNumber}`;
-            if (ui.overlayIntroStage) ui.overlayIntroStage.textContent = `STAGE ${stageNumber}`;
-            if (ui.overlayIntroLevel) ui.overlayIntroLevel.textContent = `LEVEL ${levelNumber}`;
-            if (ui.overlayIntroTotal) ui.overlayIntroTotal.textContent = `/${totalLevels}`;
-            if (ui.overlayIntroTheme) ui.overlayIntroTheme.textContent = themeName;
-            ui.overlay.classList.remove('hidden');
-
-            levelTransitionTimers.levelIntro = setTimeout(() => {
-                ui.overlay.classList.add('hidden');
-                if (typeof onDone === 'function') {
-                    onDone();
-                }
-            }, CONFIG.levelTransition.levelIntroMs);
+            if (ui.overlay) ui.overlay.classList.add('hidden');
+            if (typeof onDone === 'function') {
+                onDone();
+            }
         }
 
         function setupLevel({ reusePath = false, hideOverlay = true } = {}) {
