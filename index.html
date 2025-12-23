@@ -13,12 +13,32 @@
             --theme-shadow: rgba(56, 189, 248, 0.5);
             --theme-shadow-soft: rgba(56, 189, 248, 0.3);
             --theme-ambient: rgba(56, 189, 248, 0.22);
+            --surface-0: #0b1220;
+            --surface-1: #111827;
+            --surface-2: rgba(17, 24, 39, 0.92);
+            --surface-3: #1f2937;
+            --surface-4: #0f172a;
+            --surface-hover: #273244;
+            --border-soft: #1f2937;
+            --border-strong: #334155;
+            --text-strong: #e2e8f0;
+            --text-muted: #94a3b8;
+            --text-soft: #64748b;
+            --text-faint: #475569;
+            --radius-lg: 16px;
+            --radius-md: 12px;
+            --radius-sm: 8px;
+            --shadow-lg: 0 16px 36px rgba(0, 0, 0, 0.35);
+            --shadow-md: 0 12px 28px rgba(0, 0, 0, 0.3);
+            --shadow-sm: 0 8px 18px rgba(0, 0, 0, 0.25);
         }
 
         body {
             font-family: 'Inter', sans-serif;
             touch-action: manipulation; /* Prevent double-tap zoom */
             user-select: none;
+            background: radial-gradient(120% 90% at 50% 0%, var(--theme-ambient), transparent 55%), var(--surface-0);
+            color: var(--text-strong);
             --grid-size: 48px;
             --ambient-step: 0.8s;
             --ambient-duration: 20s;
@@ -29,10 +49,10 @@
             position: fixed;
             inset: 0;
             background:
-                linear-gradient(to right, rgba(148, 163, 184, 0.12) 1px, transparent 1px),
-                linear-gradient(to bottom, rgba(148, 163, 184, 0.12) 1px, transparent 1px);
+                linear-gradient(to right, rgba(148, 163, 184, 0.1) 1px, transparent 1px),
+                linear-gradient(to bottom, rgba(148, 163, 184, 0.1) 1px, transparent 1px);
             background-size: var(--grid-size) var(--grid-size);
-            opacity: 0.6;
+            opacity: 0.55;
             pointer-events: none;
             z-index: 0;
         }
@@ -50,7 +70,7 @@
             height: var(--grid-size);
             left: calc(var(--grid-size) * var(--x));
             top: calc(var(--grid-size) * var(--y));
-            border-radius: 8px;
+            border-radius: var(--radius-sm);
             background: var(--theme-ambient);
             box-shadow: 0 0 0 var(--theme-shadow);
             opacity: 0;
@@ -63,21 +83,379 @@
             z-index: 1;
         }
 
+        .panel-card {
+            background: var(--surface-2);
+            border: 1px solid var(--border-soft);
+            border-radius: var(--radius-lg);
+            box-shadow: var(--shadow-lg);
+        }
+
+        .panel-inset {
+            background: var(--surface-0);
+            border: 1px solid var(--border-soft);
+            border-radius: var(--radius-md);
+        }
+
+        .panel-divider {
+            border-top: 1px solid var(--border-soft);
+        }
+
+        .eyebrow {
+            font-size: 10px;
+            letter-spacing: 0.3em;
+            text-transform: uppercase;
+            color: var(--text-soft);
+            font-weight: 600;
+        }
+
+        .title-core {
+            letter-spacing: 0.18em;
+            text-transform: uppercase;
+            color: var(--text-strong);
+        }
+
+        .title-hero {
+            font-size: clamp(2.4rem, 8vw, 3.6rem);
+            font-weight: 900;
+            letter-spacing: 0.18em;
+            text-transform: uppercase;
+        }
+
+        .title-hero.is-defeat {
+            color: #f87171;
+            text-shadow: 0 0 18px rgba(248, 113, 113, 0.5);
+        }
+
+        .title-hero.is-victory {
+            color: #4ade80;
+            text-shadow: 0 0 18px rgba(74, 222, 128, 0.45);
+        }
+
+        .mark-hero {
+            font-size: 1.25rem;
+            font-weight: 600;
+            letter-spacing: 0.16em;
+            text-transform: uppercase;
+            color: var(--text-strong);
+        }
+
+        .mark-hero.is-victory {
+            font-size: 3rem;
+            letter-spacing: 0.1em;
+        }
+
+        .section-label {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            font-size: 11px;
+            letter-spacing: 0.32em;
+            text-transform: uppercase;
+            color: var(--text-muted);
+            padding: 2px 2px 0;
+            font-weight: 600;
+        }
+
+        .section-label::after {
+            content: "";
+            flex: 1;
+            height: 1px;
+            background: var(--border-soft);
+        }
+
+        .field-label {
+            font-size: 11px;
+            letter-spacing: 0.3em;
+            text-transform: uppercase;
+            color: var(--text-soft);
+            font-weight: 600;
+        }
+
+        .text-muted {
+            color: var(--text-muted);
+        }
+
+        .text-soft {
+            color: var(--text-soft);
+        }
+
+        .text-faint {
+            color: var(--text-faint);
+        }
+
+        .input-field {
+            background: var(--surface-1);
+            border: 1px solid var(--border-soft);
+            border-radius: var(--radius-md);
+            color: var(--text-strong);
+            transition: border-color 0.2s ease, box-shadow 0.2s ease;
+        }
+
+        .input-field::placeholder {
+            color: var(--text-faint);
+        }
+
+        .input-field:focus-visible {
+            outline: none;
+            border-color: var(--theme-color);
+            box-shadow: 0 0 0 2px var(--theme-shadow-soft);
+        }
+
+        .input-field:focus {
+            outline: none;
+            border-color: var(--theme-color);
+            box-shadow: 0 0 0 2px var(--theme-shadow-soft);
+        }
+
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            border-radius: var(--radius-md);
+            text-transform: uppercase;
+            letter-spacing: 0.24em;
+            font-weight: 600;
+            font-size: 0.7rem;
+            border: 1px solid transparent;
+            cursor: pointer;
+            transition: transform 0.2s ease, box-shadow 0.2s ease, background-color 0.2s ease, border-color 0.2s ease, color 0.2s ease;
+        }
+
+        .btn:focus-visible {
+            outline: none;
+            box-shadow: 0 0 0 2px var(--theme-shadow);
+        }
+
+        .btn-lg {
+            font-size: 0.8rem;
+            letter-spacing: 0.2em;
+        }
+
+        .btn-sm {
+            font-size: 0.65rem;
+            letter-spacing: 0.2em;
+        }
+
+        .btn-primary {
+            background: var(--theme-color);
+            color: #0b1220;
+            box-shadow: 0 12px 24px var(--theme-shadow-soft);
+            font-weight: 700;
+        }
+
+        .btn-primary:hover {
+            filter: brightness(1.05);
+        }
+
+        .btn-secondary {
+            background: var(--surface-3);
+            border-color: var(--border-strong);
+            color: var(--text-muted);
+        }
+
+        .btn-secondary:hover {
+            background: var(--surface-hover);
+            color: var(--text-strong);
+        }
+
+        .btn-ghost {
+            background: transparent;
+            border-color: var(--border-soft);
+            color: var(--text-muted);
+        }
+
+        .btn-ghost:hover {
+            background: rgba(255, 255, 255, 0.04);
+            border-color: var(--border-strong);
+            color: var(--text-strong);
+        }
+
+        .btn-danger {
+            border-color: rgba(248, 113, 113, 0.4);
+            color: #f87171;
+        }
+
+        .btn-danger:hover {
+            border-color: rgba(248, 113, 113, 0.75);
+            color: #fecaca;
+        }
+
+        .hud-panel {
+            background: rgba(15, 23, 42, 0.92);
+            border-bottom: 1px solid var(--border-soft);
+            box-shadow: var(--shadow-sm);
+            backdrop-filter: blur(8px);
+        }
+
+        .hud-title {
+            font-size: 0.85rem;
+            font-weight: 700;
+            letter-spacing: 0.24em;
+            text-transform: uppercase;
+            color: var(--text-strong);
+        }
+
+        .hud-meta {
+            font-size: 0.6rem;
+            letter-spacing: 0.28em;
+            text-transform: uppercase;
+            color: var(--text-soft);
+            font-weight: 600;
+        }
+
+        .hud-score {
+            font-size: 1.6rem;
+            font-weight: 800;
+            color: #fbbf24;
+            text-shadow: 0 0 16px rgba(251, 191, 36, 0.35);
+            font-variant-numeric: tabular-nums;
+        }
+
+        .hud-subscore {
+            font-size: 0.6rem;
+            letter-spacing: 0.24em;
+            text-transform: uppercase;
+            color: var(--text-faint);
+            font-weight: 600;
+            font-variant-numeric: tabular-nums;
+        }
+
+        .status-chip {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            padding: 2px 12px;
+            border-radius: 999px;
+            font-size: 10px;
+            letter-spacing: 0.28em;
+            text-transform: uppercase;
+            border: 1px solid var(--border-soft);
+            background: rgba(11, 18, 32, 0.7);
+            color: var(--text-muted);
+            font-weight: 600;
+        }
+
+        .status-chip[data-state="watch"],
+        .status-chip[data-state="idle"] {
+            border-color: var(--theme-color);
+            color: var(--theme-color);
+            box-shadow: 0 0 12px var(--theme-shadow-soft);
+        }
+
+        .status-chip[data-state="input"] {
+            border-color: rgba(74, 222, 128, 0.5);
+            color: #4ade80;
+            box-shadow: 0 0 12px rgba(74, 222, 128, 0.35);
+        }
+
+        .status-chip[data-state="path"] {
+            border-color: rgba(251, 191, 36, 0.6);
+            color: #fbbf24;
+            box-shadow: 0 0 12px rgba(251, 191, 36, 0.35);
+        }
+
+        .status-chip[data-state="retry"] {
+            border-color: rgba(248, 113, 113, 0.6);
+            color: #f87171;
+            box-shadow: 0 0 12px rgba(248, 113, 113, 0.35);
+        }
+
+        .timer-track {
+            background: var(--surface-3);
+            border: 1px solid var(--border-strong);
+            border-radius: 999px;
+            overflow: hidden;
+        }
+
+        .timer-fill {
+            height: 100%;
+            width: 100%;
+            background: linear-gradient(90deg, var(--theme-color), #60a5fa);
+            box-shadow: 0 0 14px var(--theme-shadow-soft);
+            transition: width 0.1s linear;
+            border-radius: inherit;
+        }
+
+        .timer-fill[data-state="input"] {
+            background: linear-gradient(90deg, #4ade80, #22c55e);
+            box-shadow: 0 0 14px rgba(74, 222, 128, 0.4);
+        }
+
+        .timer-fill[data-state="danger"] {
+            background: linear-gradient(90deg, #f87171, #ef4444);
+            box-shadow: 0 0 14px rgba(248, 113, 113, 0.4);
+        }
+
+        .stat-accent {
+            color: var(--theme-color);
+            text-shadow: 0 0 12px var(--theme-shadow-soft);
+        }
+
+        .score-accent {
+            color: #fbbf24;
+            text-shadow: 0 0 12px rgba(251, 191, 36, 0.35);
+            font-variant-numeric: tabular-nums;
+        }
+
+        .overlay-scrim {
+            background: rgba(11, 18, 32, 0.92);
+            border: 1px solid var(--border-soft);
+            border-radius: var(--radius-lg);
+            backdrop-filter: blur(6px);
+        }
+
+        .table-shell {
+            background: var(--surface-1);
+            border: 1px solid var(--border-soft);
+            border-radius: var(--radius-lg);
+            box-shadow: var(--shadow-lg);
+            overflow: hidden;
+        }
+
+        .table-shell thead {
+            background: var(--surface-3);
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.32em;
+            font-size: 11px;
+            font-weight: 600;
+        }
+
+        .leaderboard-row {
+            color: var(--text-muted);
+            border-bottom: 1px solid var(--border-soft);
+        }
+
+        .leaderboard-row.is-highlight {
+            color: #fbbf24;
+            font-weight: 700;
+            background: rgba(251, 191, 36, 0.12);
+        }
+
         /* Custom Scrollbar for Leaderboard */
         .custom-scroll::-webkit-scrollbar {
             width: 6px;
         }
         .custom-scroll::-webkit-scrollbar-track {
-            background: #1f2937;
+            background: var(--surface-3);
         }
         .custom-scroll::-webkit-scrollbar-thumb {
-            background: #4b5563;
+            background: var(--border-strong);
             border-radius: 3px;
         }
 
         /* Grid Cell Animations */
         .cell {
-            transition: all 0.2s ease;
+            box-sizing: border-box;
+            width: 100%;
+            height: 100%;
+            border-radius: var(--radius-sm);
+            background-color: var(--surface-3);
+            border: 1px solid var(--border-strong);
+            cursor: pointer;
+            touch-action: none;
+            transition: background-color 0.2s ease, box-shadow 0.2s ease, transform 0.2s ease, border-color 0.2s ease;
         }
 
         .grid-no-transitions .cell {
@@ -86,8 +464,12 @@
 
         @media (hover: none) {
             .cell:hover {
-                background-color: #374151; /* Match bg-gray-700 to avoid sticky hover on touch */
+                background-color: var(--surface-3); /* Avoid sticky hover on touch */
             }
+        }
+
+        .cell:hover {
+            background-color: var(--surface-hover);
         }
 
         .grid-locked {
@@ -98,27 +480,32 @@
             background-color: var(--theme-color);
             box-shadow: 0 0 15px var(--theme-shadow);
             transform: scale(0.95);
+            border-color: var(--theme-color);
         }
 
         .cell.success {
             background-color: #4ade80; /* Green 400 */
             box-shadow: 0 0 15px #4ade80;
+            border-color: #4ade80;
         }
 
         .cell.correct {
             background-color: #4ade80; /* Green 400 */
             box-shadow: 0 0 15px #4ade80;
+            border-color: #4ade80;
         }
 
         .cell.error {
             background-color: #f87171; /* Red 400 */
             box-shadow: 0 0 15px #f87171;
             animation: shake 0.4s cubic-bezier(.36,.07,.19,.97) both;
+            border-color: #f87171;
         }
 
         .cell.reveal {
             background-color: #f59e0b; /* Amber 500 */
             box-shadow: 0 0 15px #f59e0b;
+            border-color: #f59e0b;
         }
 
         .menu-title {
@@ -130,7 +517,7 @@
             background-size: 200% auto;
             -webkit-background-clip: text;
             color: transparent;
-            text-shadow: 0 0 18px rgba(56, 189, 248, 0.35);
+            text-shadow: 0 0 18px var(--theme-shadow-soft);
             animation: title-glide 6s linear infinite;
         }
 
@@ -150,11 +537,11 @@
         }
 
         .howto-card {
-            background: rgba(17, 24, 39, 0.92);
-            border: 1px solid #374151;
-            border-radius: 16px;
+            background: var(--surface-2);
+            border: 1px solid var(--border-strong);
+            border-radius: var(--radius-lg);
             padding: 16px;
-            box-shadow: 0 12px 30px rgba(0, 0, 0, 0.35);
+            box-shadow: var(--shadow-lg);
             animation: howto-rise 0.55s ease both;
         }
 
@@ -162,7 +549,8 @@
             font-size: 10px;
             letter-spacing: 0.28em;
             text-transform: uppercase;
-            color: #64748b;
+            color: var(--text-soft);
+            font-weight: 600;
         }
 
         .howto-section {
@@ -172,21 +560,22 @@
             font-size: 11px;
             letter-spacing: 0.32em;
             text-transform: uppercase;
-            color: #94a3b8;
+            color: var(--text-muted);
             padding: 2px 2px 0;
+            font-weight: 600;
         }
 
         .howto-section::after {
             content: "";
             flex: 1;
             height: 1px;
-            background: #1f2937;
+            background: var(--border-soft);
         }
 
         .howto-visual {
-            background: #0b1220;
-            border: 1px solid #1f2937;
-            border-radius: 14px;
+            background: var(--surface-0);
+            border: 1px solid var(--border-soft);
+            border-radius: var(--radius-md);
             padding: 14px;
             display: flex;
             align-items: center;
@@ -203,36 +592,57 @@
 
         .howto-cell {
             position: relative;
-            border-radius: 6px;
-            background: #1f2937;
-            border: 1px solid #334155;
-            transition: background-color 0.2s ease, box-shadow 0.2s ease;
+            border-radius: var(--radius-sm);
+            background: var(--surface-3);
+            border: 1px solid var(--border-strong);
+            transition: background-color 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
         }
 
         .howto-cell.is-watch {
-            background: #38bdf8;
-            box-shadow: 0 0 12px rgba(56, 189, 248, 0.65);
+            background: var(--theme-color);
+            box-shadow: 0 0 12px var(--theme-shadow);
+            border-color: var(--theme-color);
         }
 
         .howto-cell.is-repeat {
             background: #4ade80;
             box-shadow: 0 0 12px rgba(74, 222, 128, 0.65);
+            border-color: #4ade80;
+        }
+
+        .step-badge {
+            font-size: 10px;
+            font-weight: 600;
+            letter-spacing: 0.32em;
+            text-transform: uppercase;
+        }
+
+        .step-badge.is-watch {
+            color: var(--theme-color);
+        }
+
+        .step-badge.is-repeat {
+            color: #4ade80;
+        }
+
+        .step-badge.is-survive {
+            color: #fbbf24;
         }
 
         .howto-timer {
             width: 100%;
             height: 10px;
-            background: #1f2937;
+            background: var(--surface-3);
             border-radius: 999px;
             overflow: hidden;
-            border: 1px solid #334155;
+            border: 1px solid var(--border-strong);
         }
 
         .howto-timer span {
             display: block;
             height: 100%;
             width: 70%;
-            background: linear-gradient(90deg, #38bdf8, #60a5fa);
+            background: linear-gradient(90deg, var(--theme-color), #60a5fa);
             animation: howto-sweep 2.8s ease-in-out infinite;
         }
 
@@ -246,6 +656,14 @@
             height: 20px;
         }
 
+        .howto-heart.is-full {
+            color: #f87171;
+        }
+
+        .howto-heart.is-empty {
+            color: var(--text-faint);
+        }
+
         .howto-score-row {
             display: flex;
             align-items: center;
@@ -257,9 +675,9 @@
             width: 18px;
             height: 18px;
             border-radius: 999px;
-            border: 1px solid #334155;
-            background: #111827;
-            color: #94a3b8;
+            border: 1px solid var(--border-strong);
+            background: var(--surface-1);
+            color: var(--text-muted);
             font-size: 11px;
             font-weight: 600;
             line-height: 1;
@@ -270,21 +688,21 @@
         }
 
         .howto-info-btn:hover {
-            border-color: #38bdf8;
-            color: #38bdf8;
+            border-color: var(--theme-color);
+            color: var(--theme-color);
         }
 
         .howto-info-btn:focus-visible {
-            outline: 2px solid rgba(56, 189, 248, 0.5);
+            outline: 2px solid var(--theme-shadow);
             outline-offset: 2px;
         }
 
         .howto-score-info {
-            border-left: 2px solid #1f2937;
+            border-left: 2px solid var(--border-soft);
             margin: 4px 0 2px;
             padding-left: 8px;
             font-size: 11px;
-            color: #94a3b8;
+            color: var(--text-muted);
             line-height: 1.5;
         }
 
@@ -308,6 +726,11 @@
         @keyframes howto-sweep {
             0%, 100% { width: 92%; }
             50% { width: 35%; }
+        }
+
+        @keyframes heart-pulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.08); }
         }
 
         @keyframes ambient-glow {
@@ -343,16 +766,15 @@
                 animation: none;
             }
 
+            .heart-icon.is-full {
+                animation: none;
+            }
+
             .ambient-square {
                 animation: none;
                 opacity: 0.12;
                 box-shadow: 0 0 10px var(--theme-shadow-soft);
             }
-        }
-
-        /* Timer Bar Animation */
-        .timer-bar {
-            transition: width 0.1s linear;
         }
 
         .heart-icon {
@@ -368,12 +790,25 @@
             display: block;
         }
 
+        .heart-icon.is-full {
+            color: #f87171;
+            filter: drop-shadow(0 0 6px rgba(248, 113, 113, 0.45));
+            animation: heart-pulse 2.4s ease-in-out infinite;
+        }
+
+        .heart-icon.is-empty {
+            color: var(--text-faint);
+            opacity: 0.7;
+        }
+
         .theme-text {
             color: var(--theme-color);
+            text-shadow: 0 0 12px var(--theme-shadow-soft);
         }
 
         .theme-bg {
             background-color: var(--theme-color);
+            color: #0b1220;
             transition: filter 0.2s ease;
         }
 
@@ -405,7 +840,7 @@
 
         .level-dot.upcoming {
             background-color: transparent;
-            border: 1px solid #4b5563;
+            border: 1px solid var(--border-strong);
         }
 
         .auto-advance-btn {
@@ -416,9 +851,10 @@
         .auto-advance-btn .btn-progress {
             position: absolute;
             inset: 0;
-            background: rgba(0, 0, 0, 0.28);
+            background: rgba(11, 18, 32, 0.45);
             transform: scaleX(0);
             transform-origin: left;
+            border-radius: inherit;
         }
 
         .auto-advance-btn.is-counting .btn-progress {
@@ -431,22 +867,22 @@
         }
     </style>
 </head>
-<body class="bg-gray-900 text-white h-screen flex flex-col overflow-hidden">
+<body class="h-screen flex flex-col overflow-hidden">
     <div id="ambient-paths" aria-hidden="true"></div>
 
     <!-- Game Container -->
     <div id="app" class="flex-1 flex flex-col relative max-w-lg mx-auto w-full h-full">
         
         <!-- HEADER / HUD -->
-        <header id="hud-header" class="p-4 bg-gray-800 border-b border-gray-700 shadow-md z-10 hidden">
+        <header id="hud-header" class="hud-panel p-4 z-10 hidden">
             <div class="flex justify-between items-center mb-2">
                 <div>
-                    <h1 class="text-xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-blue-400 to-purple-500">REMEMBER THE PATH</h1>
-                    <div id="stage-info" class="text-xs text-gray-400 font-mono hidden">ZONE 1 - STAGE 1</div>
+                    <h1 class="hud-title">REMEMBER THE PATH</h1>
+                    <div id="stage-info" class="hud-meta font-mono hidden">ZONE 1 - STAGE 1</div>
                 </div>
                 <div class="text-right">
-                    <div id="score-display" class="text-2xl font-bold text-yellow-400 hidden">0</div>
-                    <div id="high-score-mini" class="text-xs text-gray-500 hidden">HI: 0</div>
+                    <div id="score-display" class="hud-score hidden">0</div>
+                    <div id="high-score-mini" class="hud-subscore hidden">HI: 0</div>
                     <div id="level-breadcrumbs" class="flex gap-1.5 mt-1 justify-end"></div>
                 </div>
             </div>
@@ -454,14 +890,14 @@
             <!-- Hearts & Timer HUD -->
             <div id="game-hud" class="hidden flex flex-col gap-2">
                 <div class="flex justify-between items-center">
-                    <div id="hearts-container" class="flex gap-1 text-red-500">
+                    <div id="hearts-container" class="flex gap-1">
                         <!-- Hearts injected here -->
                     </div>
-                    <div id="status-text" class="text-sm font-semibold theme-text uppercase tracking-wider">WAIT</div>
+                    <div id="status-text" class="status-chip" data-state="idle">WAIT</div>
                 </div>
                 <!-- Timer Bar -->
-                <div class="w-full bg-gray-700 h-5 rounded-full overflow-hidden">
-                    <div id="timer-bar" class="h-full theme-bg w-full"></div>
+                <div class="w-full h-5 timer-track">
+                    <div id="timer-bar" class="timer-fill" data-state="watch"></div>
                 </div>
             </div>
         </header>
@@ -475,37 +911,37 @@
                     <h1 id="menu-title" class="menu-title">REMEMBER THE PATH</h1>
                 </div>
                 
-                <div class="w-full max-w-xs space-y-4">
+                <div class="w-full max-w-xs panel-card p-4 space-y-4">
                     <div>
-                        <label class="block text-xs text-gray-500 mb-1 uppercase tracking-wide">Player Name</label>
-                        <input type="text" id="player-name" class="w-full bg-gray-800 border border-gray-700 rounded p-3 text-white focus:outline-none focus:border-blue-500 transition" placeholder="Enter name" maxlength="10">
+                        <label class="field-label block mb-1">Player Name</label>
+                        <input type="text" id="player-name" class="input-field w-full p-3" placeholder="Enter name" maxlength="10">
                     </div>
-                    <button id="btn-start" class="w-full theme-bg text-white font-bold py-3 px-4 rounded shadow-lg transform transition active:scale-95">START GAME</button>
-                    <button id="btn-howto" class="w-full bg-gray-700 hover:bg-gray-600 text-gray-200 font-semibold py-3 px-4 rounded shadow transform transition active:scale-95">HOW TO PLAY</button>
-                    <button id="btn-leaderboard" class="w-full bg-gray-700 hover:bg-gray-600 text-gray-300 font-semibold py-3 px-4 rounded shadow transform transition active:scale-95">LEADERBOARD</button>
+                    <button id="btn-start" class="w-full btn btn-primary btn-lg py-3 px-4 active:scale-95">START GAME</button>
+                    <button id="btn-howto" class="w-full btn btn-secondary btn-lg py-3 px-4 active:scale-95">HOW TO PLAY</button>
+                    <button id="btn-leaderboard" class="w-full btn btn-ghost btn-lg py-3 px-4 active:scale-95">LEADERBOARD</button>
                 </div>
             </div>
 
             <!-- STAGE INTRO SCREEN -->
             <div id="stage-screen" class="hidden absolute inset-0 z-20 flex flex-col items-center justify-center p-6 space-y-6">
                 <div class="text-center space-y-2">
-                    <div id="zone-title" class="text-xs text-gray-500 uppercase tracking-widest">ZONE 1</div>
-                    <h2 id="stage-title" class="text-4xl font-extrabold text-white">STAGE 1</h2>
+                    <div id="zone-title" class="eyebrow">ZONE 1</div>
+                    <h2 id="stage-title" class="text-4xl font-extrabold title-core">STAGE 1</h2>
                 </div>
-                <div class="w-full max-w-xs bg-gray-800/70 border border-gray-700 rounded-lg p-4 text-center">
-                    <div class="text-sm text-gray-500 uppercase tracking-widest mb-1">Difficulty</div>
-                    <div id="stage-difficulty" class="text-2xl font-bold text-amber-400">Piece of Cake</div>
-                    <div class="mt-4 w-24 mx-auto border-t border-gray-700"></div>
+                <div class="w-full max-w-xs panel-card p-4 text-center">
+                    <div class="field-label mb-1">Difficulty</div>
+                    <div id="stage-difficulty" class="text-2xl font-bold stat-accent">Piece of Cake</div>
+                    <div class="mt-4 w-24 mx-auto panel-divider"></div>
                     <div class="mt-3">
-                        <div class="text-sm text-gray-500 uppercase tracking-widest">Levels</div>
-                        <span id="stage-level-count" class="text-2xl font-bold text-amber-400">5</span>
+                        <div class="field-label">Levels</div>
+                        <span id="stage-level-count" class="text-2xl font-bold stat-accent">5</span>
                     </div>
                 </div>
-                <button id="btn-stage-start" class="w-full max-w-xs theme-bg text-white font-bold py-3 px-4 rounded shadow-lg transform transition active:scale-95">START STAGE</button>
+                <button id="btn-stage-start" class="w-full max-w-xs btn btn-primary btn-lg py-3 px-4 active:scale-95">START STAGE</button>
             </div>
 
             <!-- GRID CONTAINER -->
-            <div id="game-container" class="hidden relative flex items-center justify-center w-full aspect-square max-w-[400px] bg-gray-800 rounded-xl p-2 shadow-2xl border border-gray-700">
+            <div id="game-container" class="hidden relative flex items-center justify-center w-full aspect-square max-w-[400px] panel-card p-2">
                 <div id="grid" class="w-full h-full grid gap-1.5 sm:gap-2">
                     <!-- Grid cells generated by JS -->
                 </div>
@@ -521,45 +957,45 @@
                 </svg>
                 
                 <!-- Overlay for "Level Complete" / "Get Ready" -->
-                <div id="overlay-message" class="absolute inset-0 z-10 bg-gray-900/90 flex flex-col items-center justify-center text-center hidden backdrop-blur-sm rounded-xl">
+                <div id="overlay-message" class="absolute inset-0 z-10 overlay-scrim flex flex-col items-center justify-center text-center hidden">
                     <div id="overlay-intro" class="hidden space-y-3">
-                        <div class="text-xs font-mono text-gray-500 uppercase tracking-[0.35em]">
+                        <div class="eyebrow font-mono">
                             <span id="overlay-intro-zone">ZONE 1</span>
-                            <span class="mx-2 text-gray-600">•</span>
+                            <span class="mx-2 text-faint">•</span>
                             <span id="overlay-intro-stage">STAGE 1</span>
                         </div>
                         <div class="flex items-baseline justify-center gap-3">
-                            <h3 id="overlay-intro-level" class="text-6xl font-black text-white tracking-tight">LEVEL 1</h3>
-                            <span id="overlay-intro-total" class="text-2xl text-gray-500 font-semibold">/5</span>
+                            <h3 id="overlay-intro-level" class="text-6xl font-black title-core">LEVEL 1</h3>
+                            <span id="overlay-intro-total" class="text-2xl font-semibold text-muted">/5</span>
                         </div>
-                        <div id="overlay-intro-theme" class="text-[11px] uppercase tracking-[0.4em] theme-text">Cyber Blue</div>
+                        <div id="overlay-intro-theme" class="eyebrow theme-text">Cyber Blue</div>
                     </div>
-                    <h3 id="overlay-title" class="text-2xl font-bold text-white mb-2">LEVEL COMPLETE</h3>
-                    <div id="overlay-breakdown" class="w-full max-w-xs bg-gray-800/70 border border-gray-700 rounded-lg p-4 mb-5 text-left">
-                        <div class="flex justify-between text-[11px] uppercase tracking-wider text-gray-400 mb-2">
+                    <h3 id="overlay-title" class="text-2xl font-bold title-core mb-2">LEVEL COMPLETE</h3>
+                    <div id="overlay-breakdown" class="w-full max-w-xs panel-card p-4 mb-5 text-left">
+                        <div class="flex justify-between text-[11px] uppercase tracking-[0.32em] text-muted mb-2">
                             <span>Score Breakdown</span>
                             <span>Pts</span>
                         </div>
                         <div class="space-y-1 text-sm">
                             <div class="flex justify-between">
-                                <span class="text-gray-300">Level Cleared</span>
-                                <span id="overlay-score-base" class="font-mono text-yellow-300">+0</span>
+                                <span class="text-muted">Level Cleared</span>
+                                <span id="overlay-score-base" class="font-mono score-accent">+0</span>
                             </div>
                             <div class="flex justify-between">
-                                <span class="text-gray-300">Time Bonus</span>
-                                <span id="overlay-score-time" class="font-mono text-yellow-300">+0</span>
+                                <span class="text-muted">Time Bonus</span>
+                                <span id="overlay-score-time" class="font-mono score-accent">+0</span>
                             </div>
                             <div class="flex justify-between">
-                                <span class="text-gray-300">Stage Bonus</span>
-                                <span id="overlay-score-stage" class="font-mono text-yellow-300">+0</span>
+                                <span class="text-muted">Stage Bonus</span>
+                                <span id="overlay-score-stage" class="font-mono score-accent">+0</span>
                             </div>
                         </div>
-                        <div class="mt-2 pt-2 border-t border-gray-700 flex justify-between text-sm font-semibold">
-                            <span class="text-gray-200">Total</span>
-                            <span id="overlay-score-total" class="font-mono text-yellow-300">+0</span>
+                        <div class="mt-2 pt-2 panel-divider flex justify-between text-sm font-semibold">
+                            <span>Total</span>
+                            <span id="overlay-score-total" class="font-mono score-accent">+0</span>
                         </div>
                     </div>
-                    <button id="btn-next-level" class="auto-advance-btn bg-green-600 hover:bg-green-500 text-white font-bold py-2 px-6 rounded-full shadow-lg transform transition active:scale-95 hidden">
+                    <button id="btn-next-level" class="auto-advance-btn btn btn-primary btn-lg py-2 px-6 active:scale-95 hidden">
                         <span class="relative z-10">CONTINUE</span>
                         <span class="btn-progress" aria-hidden="true"></span>
                     </button>
@@ -569,12 +1005,12 @@
             <!-- LEADERBOARD SCREEN -->
             <div id="leaderboard-screen" class="hidden absolute inset-0 z-30 flex flex-col p-6">
                 <div class="flex justify-between items-center mb-6">
-                    <h2 class="text-2xl font-bold text-white">Leaderboard</h2>
-                    <button id="btn-close-leaderboard" class="bg-gray-700 hover:bg-gray-600 text-gray-200 text-xs font-semibold uppercase tracking-wider py-2 px-3 rounded-md border border-gray-600 shadow">Close</button>
+                    <h2 class="text-2xl font-bold title-core">Leaderboard</h2>
+                    <button id="btn-close-leaderboard" class="btn btn-secondary btn-sm py-2 px-3">Close</button>
                 </div>
-                <div class="flex-1 overflow-y-auto custom-scroll bg-gray-800 rounded-lg border border-gray-700">
+                <div class="flex-1 overflow-y-auto custom-scroll table-shell">
                     <table class="w-full text-left border-collapse">
-                        <thead class="bg-gray-700 text-xs text-gray-400 uppercase sticky top-0">
+                        <thead class="sticky top-0">
                             <tr>
                                 <th class="p-3">Rank</th>
                                 <th class="p-3">Player</th>
@@ -588,7 +1024,7 @@
                     </table>
                 </div>
                 <div class="mt-4 text-center">
-                    <button id="btn-reset-data" class="text-xs text-red-500 hover:text-red-400 underline">Clear Data</button>
+                    <button id="btn-reset-data" class="btn btn-ghost btn-danger btn-sm py-2 px-3">Clear Data</button>
                 </div>
             </div>
 
@@ -596,10 +1032,10 @@
             <div id="howto-screen" class="hidden absolute inset-0 z-30 flex flex-col p-6">
                 <div class="flex items-start justify-between gap-4 mb-5">
                     <div>
-                        <h2 class="text-3xl font-extrabold text-white mt-1">How To Play</h2>
-                        <p class="text-sm text-gray-400 mt-1 max-w-sm">Watch the pattern, tap it back, and outrun the timer.</p>
+                        <h2 class="text-3xl font-extrabold title-core mt-1">How To Play</h2>
+                        <p class="text-sm text-muted mt-1 max-w-sm">Watch the pattern, tap it back, and outrun the timer.</p>
                     </div>
-                    <button id="btn-close-howto" class="bg-gray-700 hover:bg-gray-600 text-gray-200 text-xs font-semibold uppercase tracking-wider py-2 px-3 rounded-md border border-gray-600 shadow">Back</button>
+                    <button id="btn-close-howto" class="btn btn-secondary btn-sm py-2 px-3">Back</button>
                 </div>
                 <div class="flex-1 overflow-y-auto custom-scroll pr-2">
                     <div class="space-y-4 max-w-md mx-auto">
@@ -607,7 +1043,7 @@
                         <div class="howto-card" style="animation-delay: 0.05s;">
                             <div class="flex items-center justify-between mb-3">
                                 <div class="howto-step">Step 1</div>
-                                <div class="text-xs text-sky-300 font-semibold uppercase tracking-widest">Watch</div>
+                                <div class="step-badge is-watch">Watch</div>
                             </div>
                             <div class="flex flex-col sm:flex-row gap-4 items-center">
                                 <div class="howto-visual">
@@ -630,13 +1066,13 @@
                                         <div class="howto-cell" data-watch-step="7"></div>
                                     </div>
                                 </div>
-                                <p class="text-sm text-gray-300 leading-relaxed">The path flashes once. Memorize it and get ready to repeat it.</p>
+                                <p class="text-sm text-muted leading-relaxed">The path flashes once. Memorize it and get ready to repeat it.</p>
                             </div>
                         </div>
                         <div class="howto-card" style="animation-delay: 0.12s;">
                             <div class="flex items-center justify-between mb-3">
                                 <div class="howto-step">Step 2</div>
-                                <div class="text-xs text-emerald-300 font-semibold uppercase tracking-widest">Repeat</div>
+                                <div class="step-badge is-repeat">Repeat</div>
                             </div>
                             <div class="flex flex-col sm:flex-row gap-4 items-center">
                                 <div class="howto-visual">
@@ -659,54 +1095,54 @@
                                         <div class="howto-cell" data-repeat-step="7"></div>
                                     </div>
                                 </div>
-                                <p class="text-sm text-gray-300 leading-relaxed">Tap the same squares in order. A wrong tap costs a heart.</p>
+                                <p class="text-sm text-muted leading-relaxed">Tap the same squares in order. A wrong tap costs a heart.</p>
                             </div>
                         </div>
                         <div class="howto-card" style="animation-delay: 0.19s;">
                             <div class="flex items-center justify-between mb-3">
                                 <div class="howto-step">Step 3</div>
-                                <div class="text-xs text-amber-300 font-semibold uppercase tracking-widest">Survive</div>
+                                <div class="step-badge is-survive">Survive</div>
                             </div>
                             <div class="flex flex-col sm:flex-row gap-4 items-center">
                                 <div class="howto-visual w-full">
                                     <div class="w-full space-y-3">
                                         <div class="howto-timer"><span></span></div>
-                                        <div class="flex items-center justify-between text-[11px] uppercase tracking-widest text-gray-400">
+                                        <div class="flex items-center justify-between text-[11px] uppercase tracking-[0.32em] text-muted">
                                             <span>Time</span>
                                             <span>Hearts</span>
                                         </div>
                                         <div class="flex items-center justify-between">
                                             <div class="flex-1"></div>
                                             <div class="howto-hearts">
-                                                <svg class="howto-heart text-red-500" viewBox="0 0 24 24" aria-hidden="true">
+                                                <svg class="howto-heart is-full" viewBox="0 0 24 24" aria-hidden="true">
                                                     <path fill="currentColor" d="M12 21s-6.713-4.477-9.6-8.23C.46 10.357.999 7.07 3.044 5.25 4.94 3.57 7.62 3.78 9.272 5.49L12 8.323l2.728-2.834c1.652-1.71 4.333-1.92 6.229-.24 2.045 1.82 2.584 5.107.644 7.52C18.713 16.523 12 21 12 21z"></path>
                                                 </svg>
-                                                <svg class="howto-heart text-red-500" viewBox="0 0 24 24" aria-hidden="true">
+                                                <svg class="howto-heart is-full" viewBox="0 0 24 24" aria-hidden="true">
                                                     <path fill="currentColor" d="M12 21s-6.713-4.477-9.6-8.23C.46 10.357.999 7.07 3.044 5.25 4.94 3.57 7.62 3.78 9.272 5.49L12 8.323l2.728-2.834c1.652-1.71 4.333-1.92 6.229-.24 2.045 1.82 2.584 5.107.644 7.52C18.713 16.523 12 21 12 21z"></path>
                                                 </svg>
-                                                <svg class="howto-heart text-gray-600" viewBox="0 0 24 24" aria-hidden="true">
+                                                <svg class="howto-heart is-empty" viewBox="0 0 24 24" aria-hidden="true">
                                                     <path fill="currentColor" d="M12 21s-6.713-4.477-9.6-8.23C.46 10.357.999 7.07 3.044 5.25 4.94 3.57 7.62 3.78 9.272 5.49L12 8.323l2.728-2.834c1.652-1.71 4.333-1.92 6.229-.24 2.045 1.82 2.584 5.107.644 7.52C18.713 16.523 12 21 12 21z"></path>
                                                 </svg>
                                             </div>
                                         </div>
                                     </div>
                                 </div>
-                                <p class="text-sm text-gray-300 leading-relaxed">Beat the timer before it drains. Running out of hearts ends the run.</p>
+                                <p class="text-sm text-muted leading-relaxed">Beat the timer before it drains. Running out of hearts ends the run.</p>
                             </div>
                         </div>
                         <div class="howto-section">Scoring</div>
                         <div class="howto-card" style="animation-delay: 0.26s;">
                             <div class="flex items-center justify-between mb-3">
-                                <div class="text-xs text-slate-400 font-semibold uppercase tracking-widest">Score Breakdown Per Level</div>
-                                <div class="text-xs text-yellow-300 font-semibold uppercase tracking-widest">Points</div>
+                                <div class="text-xs text-muted font-semibold uppercase tracking-[0.32em]">Score Breakdown Per Level</div>
+                                <div class="text-xs score-accent font-semibold uppercase tracking-[0.32em]">Points</div>
                             </div>
-                            <div class="space-y-2 text-sm text-gray-300">
+                            <div class="space-y-2 text-sm text-muted">
                                 <div class="howto-score-row">
                                     <div class="flex items-center gap-2">
                                         <span>Completing a Level</span>
                                         <button class="howto-info-btn" type="button" aria-label="Explain points per level" aria-expanded="false" aria-controls="howto-score-info-base" data-score-info>?</button>
                                     </div>
-                                    <span id="howto-score-base" class="font-mono text-yellow-300">+0</span>
+                                    <span id="howto-score-base" class="font-mono score-accent">+0</span>
                                 </div>
                                 <div id="howto-score-info-base" class="howto-score-info hidden">Flat points for clearing a level, before any bonuses.</div>
                                 <div class="howto-score-row">
@@ -714,7 +1150,7 @@
                                         <span>Time Bonus</span>
                                         <button class="howto-info-btn" type="button" aria-label="Explain time bonus" aria-expanded="false" aria-controls="howto-score-info-time" data-score-info>?</button>
                                     </div>
-                                    <span id="howto-score-time" class="font-mono text-yellow-300">+0 ~ +0</span>
+                                    <span id="howto-score-time" class="font-mono score-accent">+0 ~ +0</span>
                                 </div>
                                 <div id="howto-score-info-time" class="howto-score-info hidden">Finish faster to push the time bonus toward the max.</div>
                                 <div class="howto-score-row">
@@ -722,11 +1158,11 @@
                                         <span>Stage Bonus</span>
                                         <button class="howto-info-btn" type="button" aria-label="Explain stage bonus" aria-expanded="false" aria-controls="howto-score-info-stage" data-score-info>?</button>
                                     </div>
-                                    <span id="howto-score-stage" class="font-mono text-yellow-300">+(stage number × 0)</span>
+                                    <span id="howto-score-stage" class="font-mono score-accent">+(stage number × 0)</span>
                                 </div>
                                 <div id="howto-score-info-stage" class="howto-score-info hidden">Later stages add more bonus points.</div>
                             </div>
-                            <div id="howto-score-formula" class="mt-3 text-xs text-gray-400"></div>
+                            <div id="howto-score-formula" class="mt-3 text-xs text-muted"></div>
                         </div>
                     </div>
                 </div>
@@ -734,24 +1170,24 @@
 
             <!-- GAME OVER SCREEN -->
             <div id="game-over-screen" class="hidden absolute inset-0 z-30 flex flex-col items-center justify-center p-6 text-center">
-                <h2 id="game-over-title" class="text-4xl font-black text-red-500 mb-2">GAME OVER</h2>
-                <div id="game-over-mark" class="text-2xl font-semibold text-gray-200 mb-2">Good try!</div>
-                <p id="game-over-description" class="text-gray-300 mb-6">You ran out of hearts.</p>
+                <h2 id="game-over-title" class="title-hero is-defeat mb-2">GAME OVER</h2>
+                <div id="game-over-mark" class="mark-hero mb-2">Good try!</div>
+                <p id="game-over-description" class="text-muted mb-6">You ran out of hearts.</p>
                 
-                <div class="bg-gray-800 rounded-lg p-6 w-full max-w-xs mb-6 border border-gray-700">
-                    <div class="text-xs text-gray-500 uppercase tracking-widest mb-1">Final Score</div>
-                    <div id="final-score" class="text-4xl font-bold text-white">0</div>
+                <div class="panel-card p-6 w-full max-w-xs mb-6">
+                    <div class="field-label mb-1">Final Score</div>
+                    <div id="final-score" class="text-4xl font-bold font-mono score-accent">0</div>
                 </div>
 
                 <div class="space-y-3 w-full max-w-xs">
-                    <button id="btn-retry" class="w-full bg-white text-gray-900 hover:bg-gray-100 font-bold py-3 px-4 rounded shadow-lg transform transition active:scale-95">TRY AGAIN</button>
-                    <button id="btn-home" class="w-full border border-gray-600 text-gray-400 hover:text-white hover:border-gray-500 font-semibold py-3 px-4 rounded transition">MAIN MENU</button>
+                    <button id="btn-retry" class="w-full btn btn-primary btn-lg py-3 px-4 active:scale-95">TRY AGAIN</button>
+                    <button id="btn-home" class="w-full btn btn-ghost btn-lg py-3 px-4 active:scale-95">MAIN MENU</button>
                 </div>
             </div>
 
         </main>
 
-        <div id="app-version" class="absolute bottom-2 right-3 text-[10px] text-gray-700 uppercase tracking-widest pointer-events-none"></div>
+        <div id="app-version" class="absolute bottom-2 right-3 text-[10px] text-faint uppercase tracking-widest pointer-events-none"></div>
     </div>
 
     <!-- AUDIO ELEMENTS (Simple synthesizers used in JS, fallback placeholders here) -->
@@ -760,7 +1196,7 @@
         /**
          * CONFIGURATION
          */
-        const APP_VERSION = 'v1.1.0';
+        const APP_VERSION = 'v1.1.1';
 
         const BASE_STAGES = [
             { id: 1, size: 3, levels: 1 },
@@ -984,10 +1420,10 @@
             gameOverMark: document.getElementById('game-over-mark'),
             gameOverDescription: document.getElementById('game-over-description')
         };
-        const GAME_OVER_TITLE_CLASS = 'text-4xl font-black text-red-500 mb-2';
-        const VICTORY_TITLE_CLASS = 'text-4xl font-black text-green-500 mb-2';
-        const GAME_OVER_MARK_CLASS = 'text-2xl font-semibold text-gray-200 mb-2';
-        const VICTORY_MARK_CLASS = 'text-6xl mb-2';
+        const GAME_OVER_TITLE_CLASS = 'title-hero is-defeat mb-2';
+        const VICTORY_TITLE_CLASS = 'title-hero is-victory mb-2';
+        const GAME_OVER_MARK_CLASS = 'mark-hero mb-2';
+        const VICTORY_MARK_CLASS = 'mark-hero is-victory mb-2';
 
         /**
          * PATH GENERATION ALGORITHM
@@ -1688,11 +2124,20 @@
                     </svg>
                 `;
                 heart.className = i < state.player.hearts
-                    ? 'heart-icon text-red-500 animate-pulse'
-                    : 'heart-icon text-gray-700';
+                    ? 'heart-icon is-full'
+                    : 'heart-icon is-empty';
                 heart.style.fontSize = `${CONFIG.ui.heartFontSizeRem}rem`;
                 ui.heartsContainer.appendChild(heart);
             }
+        }
+
+        function setStatus(label, stateName) {
+            ui.statusText.textContent = label;
+            ui.statusText.dataset.state = stateName;
+        }
+
+        function setTimerState(stateName) {
+            ui.timerBar.dataset.state = stateName;
         }
 
         function clearLevelTransitionTimers() {
@@ -1796,10 +2241,9 @@
             ui.pathOverlay.classList.add('hidden');
             state.status = 'WATCH';
             state.inputIndex = 0;
-            ui.statusText.textContent = "WATCH";
-            ui.statusText.className = "text-sm font-semibold theme-text uppercase tracking-wider";
+            setStatus("WATCH", "watch");
             ui.timerBar.style.width = '100%';
-            ui.timerBar.className = 'h-full theme-bg w-full';
+            setTimerState("watch");
 
             const stageConfig = getActiveStageConfig();
             const zone = getActiveZone();
@@ -1862,7 +2306,7 @@
                 for(let c=0; c<size; c++) {
                     const cell = document.createElement('div');
                     // touch-none added to prevent scrolling interference
-                    cell.className = "cell box-border w-full h-full bg-gray-700 rounded-md cursor-pointer hover:bg-gray-600 border border-gray-600 touch-none";
+                    cell.className = "cell";
                     cell.dataset.r = r;
                     cell.dataset.c = c;
                     
@@ -2050,9 +2494,8 @@
 
         function beginInputPhase() {
             state.status = 'INPUT';
-            ui.statusText.textContent = "YOUR TURN";
-            ui.statusText.className = "text-sm font-bold text-green-400 uppercase tracking-wider animate-pulse";
-            ui.timerBar.className = 'h-full bg-green-500 w-full';
+            setStatus("YOUR TURN", "input");
+            setTimerState("input");
             setGridInteractivity(true);
 
             // Timer Setup
@@ -2073,7 +2516,9 @@
                 ui.timerBar.style.width = `${pct}%`;
 
                 // Change color if low
-                if (pct < CONFIG.input.lowTimeThresholdPct) ui.timerBar.className = 'h-full bg-red-500 w-full';
+                if (pct < CONFIG.input.lowTimeThresholdPct && ui.timerBar.dataset.state !== 'danger') {
+                    setTimerState("danger");
+                }
 
                 if (state.timerValue <= 0) {
                     handleMistake("TIME UP");
@@ -2130,8 +2575,7 @@
             state.player.hearts--;
             updateHUD();
 
-            ui.statusText.textContent = "PATH";
-            ui.statusText.className = "text-sm font-bold text-yellow-300 uppercase tracking-wider";
+            setStatus("PATH", "path");
 
             revealPathBriefly(state.inputIndex, () => {
                 if (state.player.hearts <= 0) {
@@ -2140,8 +2584,7 @@
                 }
 
                 // Brief pause then replay pattern
-                ui.statusText.textContent = "TRY AGAIN";
-                ui.statusText.className = "text-sm font-bold text-red-500 uppercase tracking-wider";
+                setStatus("TRY AGAIN", "retry");
                 setTimeout(() => {
                     startLevel({ reusePath: true });
                 }, CONFIG.input.retryDelayMs);
@@ -2328,13 +2771,13 @@
             ui.leaderboardBody.innerHTML = '';
             
             if (lb.length === 0) {
-                ui.leaderboardBody.innerHTML = '<tr><td colspan="4" class="p-4 text-center text-gray-500">No scores yet. Be the first!</td></tr>';
+                ui.leaderboardBody.innerHTML = '<tr><td colspan="4" class="p-4 text-center text-muted">No scores yet. Be the first!</td></tr>';
             } else {
                 lb.forEach((entry, idx) => {
                     const row = document.createElement('tr');
                     row.className = idx < CONFIG.leaderboard.highlightTopCount
-                        ? 'text-yellow-400 font-bold bg-gray-700/30 border-b border-gray-700'
-                        : 'text-gray-300 border-b border-gray-700';
+                        ? 'leaderboard-row is-highlight'
+                        : 'leaderboard-row';
                     const icon = CONFIG.leaderboard.topRankIcons[idx]
                         ? `${CONFIG.leaderboard.topRankIcons[idx]} `
                         : '';
