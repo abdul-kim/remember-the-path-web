@@ -1241,7 +1241,7 @@
         /**
          * CONFIGURATION
          */
-        const APP_VERSION = 'v1.3.0';
+        const APP_VERSION = 'v1.3.1';
 
         const BASE_STAGES = [
             { id: 1, size: 3, levels: 1 },
@@ -1348,6 +1348,9 @@
             audio: {
                 gainStart: 0.1,
                 gainEnd: 0.01,
+                uiClickToneHz: 520,
+                uiClickToneType: 'triangle',
+                uiClickToneDurationSec: 0.06,
                 successToneFreqsHz: [800, 1200],
                 successToneDelayMs: 100,
                 successToneDurationSec: 0.1,
@@ -1921,6 +1924,20 @@
             return Math.min(max, Math.max(min, value));
         }
 
+        function withUiClickSound(handler, { shouldPlay } = {}) {
+            return (event) => {
+                const allowSound = typeof shouldPlay === 'function' ? shouldPlay(event) : true;
+                if (allowSound) {
+                    playUiClick();
+                }
+                handler(event);
+            };
+        }
+
+        function normalizePlayerName(name) {
+            return String(name || '').trim().toLowerCase();
+        }
+
         /**
          * GAME LOGIC
          */
@@ -1938,17 +1955,19 @@
             updateMiniHighScore();
             
             // Event Listeners
-            document.getElementById('btn-start').addEventListener('click', startGame);
-            document.getElementById('btn-howto').addEventListener('click', showHowTo);
-            document.getElementById('btn-leaderboard').addEventListener('click', showLeaderboard);
-            document.getElementById('btn-close-leaderboard').addEventListener('click', hideLeaderboard);
-            document.getElementById('btn-close-howto').addEventListener('click', hideHowTo);
-            document.getElementById('btn-reset-data').addEventListener('click', resetData);
-            document.getElementById('btn-next-level').addEventListener('click', advanceFromBreakdown);
-            document.getElementById('btn-stage-start').addEventListener('click', startStage);
+            document.getElementById('btn-start').addEventListener('click', withUiClickSound(startGame));
+            document.getElementById('btn-howto').addEventListener('click', withUiClickSound(showHowTo));
+            document.getElementById('btn-leaderboard').addEventListener('click', withUiClickSound(showLeaderboard));
+            document.getElementById('btn-close-leaderboard').addEventListener('click', withUiClickSound(hideLeaderboard));
+            document.getElementById('btn-close-howto').addEventListener('click', withUiClickSound(hideHowTo));
+            document.getElementById('btn-reset-data').addEventListener('click', withUiClickSound(resetData));
+            document.getElementById('btn-next-level').addEventListener('click', withUiClickSound(advanceFromBreakdown, {
+                shouldPlay: hasNextLevelInStage
+            }));
+            document.getElementById('btn-stage-start').addEventListener('click', withUiClickSound(startStage));
             document.getElementById('btn-retry').addEventListener('click', restartZone);
-            document.getElementById('btn-home').addEventListener('click', goZones);
-            document.getElementById('btn-zone-back').addEventListener('click', goHome);
+            document.getElementById('btn-home').addEventListener('click', withUiClickSound(goZones));
+            document.getElementById('btn-zone-back').addEventListener('click', withUiClickSound(goHome));
 
             initHowToAnimations();
             updateHowToScoreDetails();
@@ -2084,6 +2103,7 @@
 
             infoButtons.forEach((button) => {
                 button.addEventListener('click', () => {
+                    playUiClick();
                     const panelId = button.getAttribute('aria-controls');
                     if (!panelId) return;
                     const panel = document.getElementById(panelId);
@@ -2110,6 +2130,12 @@
         function getActiveStageConfig() {
             const zone = getActiveZone();
             return getZoneStages(zone)[state.player.stageIndex];
+        }
+
+        function hasNextLevelInStage() {
+            const stageConfig = getActiveStageConfig();
+            if (!stageConfig || !Number.isFinite(stageConfig.levels)) return false;
+            return (state.player.levelIndex + 1) < stageConfig.levels;
         }
 
         function getZoneTitle(zone, zoneIndex) {
@@ -2153,14 +2179,16 @@
         function getZoneScoreStats(leaderboard, playerName) {
             const playerHighs = {};
             const topByZone = {};
+            const playerKey = normalizePlayerName(playerName);
 
             leaderboard.forEach((entry) => {
                 if (!entry || !entry.name) return;
+                const entryKey = normalizePlayerName(entry.name);
                 const zone = Number(entry.zone);
                 if (!Number.isFinite(zone)) return;
                 const score = Number(entry.score) || 0;
 
-                if (entry.name === playerName) {
+                if (entryKey && entryKey === playerKey) {
                     const current = playerHighs[zone] || 0;
                     if (score > current) playerHighs[zone] = score;
                 }
@@ -2314,8 +2342,7 @@
             clearLevelTransitionTimers();
             ui.overlayBreakdown.classList.remove('hidden');
 
-            const stageConfig = getActiveStageConfig();
-            const hasNextLevelInStage = (state.player.levelIndex + 1) < stageConfig.levels;
+            const hasNextLevel = hasNextLevelInStage();
             const breakdownMs = CONFIG.levelTransition.breakdownAutoAdvanceMs
                 ?? CONFIG.levelTransition.breakdownMs;
 
@@ -2335,7 +2362,7 @@
                 ui.btnNext.classList.add('hidden');
                 ui.btnNext.classList.remove('is-counting');
 
-                if (!hasNextLevelInStage) {
+                if (!hasNextLevel) {
                     ui.overlay.classList.add('hidden');
                     nextLevel();
                     return;
@@ -2881,13 +2908,15 @@
 
             leaderboard.forEach((entry) => {
                 if (!entry || !entry.name) return;
+                const nameKey = normalizePlayerName(entry.name);
+                if (!nameKey) return;
                 const zone = Number(entry.zone);
                 if (!zoneNumbers.includes(zone)) return;
                 const score = Number(entry.score) || 0;
-                let summary = players.get(entry.name);
+                let summary = players.get(nameKey);
                 if (!summary) {
-                    summary = { name: entry.name, zones: {}, total: 0 };
-                    players.set(entry.name, summary);
+                    summary = { name: entry.name, nameKey, zones: {}, total: 0 };
+                    players.set(nameKey, summary);
                 }
                 if (!(zone in summary.zones) || score > summary.zones[zone]) {
                     summary.zones[zone] = score;
@@ -2910,7 +2939,8 @@
         function getPlayerTotalScore(name, leaderboard) {
             if (!name) return 0;
             const { summaries } = getPlayerSummaries(leaderboard || getLeaderboard());
-            const player = summaries.find((summary) => summary.name === name);
+            const nameKey = normalizePlayerName(name);
+            const player = summaries.find((summary) => summary.nameKey === nameKey);
             return player ? player.total : 0;
         }
 
@@ -2921,8 +2951,14 @@
             const level = Number.isInteger(levelIndex) ? levelIndex + 1 : null;
             
             // Check if user has a score for this zone, update if higher
-            const existingIndex = lb.findIndex(entry => entry.name === name && entry.zone === zone);
+            const nameKey = normalizePlayerName(name);
+            const existingIndex = lb.findIndex(entry => {
+                return normalizePlayerName(entry.name) === nameKey && entry.zone === zone;
+            });
             if (existingIndex > -1) {
+                if (lb[existingIndex].name !== name) {
+                    lb[existingIndex].name = name;
+                }
                 if (score > lb[existingIndex].score) {
                     lb[existingIndex].score = score;
                     lb[existingIndex].stage = stage;
@@ -3043,6 +3079,15 @@
                     playTone(freq, type, duration);
                 }, index * delayMs);
             });
+        }
+
+        function playUiClick() {
+            if (!CONFIG.audio.uiClickToneHz || !CONFIG.audio.uiClickToneDurationSec) return;
+            playTone(
+                CONFIG.audio.uiClickToneHz,
+                CONFIG.audio.uiClickToneType || 'sine',
+                CONFIG.audio.uiClickToneDurationSec
+            );
         }
 
         function getRandomItem(items) {
