@@ -1025,8 +1025,8 @@
                                 <span id="overlay-score-base" class="font-mono score-accent">+0</span>
                             </div>
                             <div class="flex justify-between">
-                                <span class="text-muted">Time Bonus</span>
-                                <span id="overlay-score-time" class="font-mono score-accent">+0</span>
+                                <span class="text-muted">Time Multiplier</span>
+                                <span id="overlay-score-time" class="font-mono score-accent">x1</span>
                             </div>
                             <div class="flex justify-between">
                                 <span class="text-muted">Stage Multiplier</span>
@@ -1192,12 +1192,12 @@
                                 <div id="howto-score-info-base" class="howto-score-info hidden">Flat points for clearing a level, before any bonuses.</div>
                                 <div class="howto-score-row">
                                     <div class="flex items-center gap-2">
-                                        <span>Time Bonus</span>
-                                        <button class="howto-info-btn" type="button" aria-label="Explain time bonus" aria-expanded="false" aria-controls="howto-score-info-time" data-score-info>?</button>
+                                        <span>Time Multiplier</span>
+                                        <button class="howto-info-btn" type="button" aria-label="Explain time multiplier" aria-expanded="false" aria-controls="howto-score-info-time" data-score-info>?</button>
                                     </div>
-                                    <span id="howto-score-time" class="font-mono score-accent">+0 ~ +0</span>
+                                    <span id="howto-score-time" class="font-mono score-accent">x1 ~ x1</span>
                                 </div>
-                                <div id="howto-score-info-time" class="howto-score-info hidden">Finish faster to push the time bonus toward the max.</div>
+                                <div id="howto-score-info-time" class="howto-score-info hidden">Finish faster to push the time multiplier toward the max.</div>
                                 <div class="howto-score-row">
                                     <div class="flex items-center gap-2">
                                     <span>Stage Multiplier</span>
@@ -1241,7 +1241,7 @@
         /**
          * CONFIGURATION
          */
-        const APP_VERSION = 'v1.2.0';
+        const APP_VERSION = 'v1.3.0';
 
         const BASE_STAGES = [
             { id: 1, size: 3, levels: 1 },
@@ -1288,7 +1288,7 @@
                 }
             ],
             initialHearts: 3,
-            baseScorePerLevel: 10,
+            baseScorePerLevel: 100,
             scoring: {
                 timeBonusMultiplier: 5
             },
@@ -2073,9 +2073,9 @@
             const timeBonusMax = CONFIG.scoring.timeBonusMultiplier;
 
             baseEl.textContent = `+${baseScore}`;
-            timeEl.textContent = `+1 ~ +${timeBonusMax}`;
+            timeEl.textContent = `x1 ~ x${timeBonusMax}`;
             stageEl.textContent = `x stage number`;
-            formulaEl.textContent = `Score per level = (flat points + time bonus) x stage number`;
+            formulaEl.textContent = `Score per level = flat points x time multiplier x stage number`;
         }
 
         function initHowToScoreToggles() {
@@ -2732,11 +2732,11 @@
             state.status = 'SUCCESS';
             
             // Calculate Score
-            // Score = (base + time bonus) x stage number
+            // Score = base x time multiplier x stage number
             const baseScore = CONFIG.baseScorePerLevel;
             const timeBonus = 1 + Math.floor((state.timerValue / state.maxTime) * CONFIG.scoring.timeBonusMultiplier);
             const stageNumber = state.player.stageIndex + 1;
-            const levelScore = (baseScore + timeBonus) * stageNumber;
+            const levelScore = baseScore * timeBonus * stageNumber;
             state.player.score += levelScore;
             
             updateHUD();
@@ -2747,7 +2747,7 @@
             ui.overlayTitle.classList.remove('hidden');
             ui.overlayTitle.textContent = "LEVEL COMPLETE";
             ui.overlayBaseScore.textContent = `+${baseScore}`;
-            ui.overlayTimeBonus.textContent = `+${timeBonus}`;
+            ui.overlayTimeBonus.textContent = `x${timeBonus}`;
             ui.overlayStageBonus.textContent = `x${stageNumber}`;
             ui.overlayTotalScore.textContent = `+${levelScore}`;
             const continueLabel = ui.btnNext.querySelector('span');
