@@ -1017,7 +1017,7 @@
                     <div id="overlay-breakdown" class="w-full max-w-xs panel-card p-4 mb-5 text-left">
                         <div class="flex justify-between text-[11px] uppercase tracking-[0.32em] text-muted mb-2">
                             <span>Score Breakdown</span>
-                            <span>Pts</span>
+                            <span>Value</span>
                         </div>
                         <div class="space-y-1 text-sm">
                             <div class="flex justify-between">
@@ -1029,8 +1029,8 @@
                                 <span id="overlay-score-time" class="font-mono score-accent">+0</span>
                             </div>
                             <div class="flex justify-between">
-                                <span class="text-muted">Stage Bonus</span>
-                                <span id="overlay-score-stage" class="font-mono score-accent">+0</span>
+                                <span class="text-muted">Stage Multiplier</span>
+                                <span id="overlay-score-stage" class="font-mono score-accent">x1</span>
                             </div>
                         </div>
                         <div class="mt-2 pt-2 panel-divider flex justify-between text-sm font-semibold">
@@ -1179,7 +1179,7 @@
                         <div class="howto-card" style="animation-delay: 0.26s;">
                             <div class="flex items-center justify-between mb-3">
                                 <div class="text-xs text-muted font-semibold uppercase tracking-[0.32em]">Score Breakdown Per Level</div>
-                                <div class="text-xs score-accent font-semibold uppercase tracking-[0.32em]">Points</div>
+                                <div class="text-xs score-accent font-semibold uppercase tracking-[0.32em]">Value</div>
                             </div>
                             <div class="space-y-2 text-sm text-muted">
                                 <div class="howto-score-row">
@@ -1200,12 +1200,12 @@
                                 <div id="howto-score-info-time" class="howto-score-info hidden">Finish faster to push the time bonus toward the max.</div>
                                 <div class="howto-score-row">
                                     <div class="flex items-center gap-2">
-                                        <span>Stage Bonus</span>
-                                        <button class="howto-info-btn" type="button" aria-label="Explain stage bonus" aria-expanded="false" aria-controls="howto-score-info-stage" data-score-info>?</button>
+                                    <span>Stage Multiplier</span>
+                                        <button class="howto-info-btn" type="button" aria-label="Explain stage multiplier" aria-expanded="false" aria-controls="howto-score-info-stage" data-score-info>?</button>
                                     </div>
-                                    <span id="howto-score-stage" class="font-mono score-accent">+(stage number × 0)</span>
+                                    <span id="howto-score-stage" class="font-mono score-accent">x stage number</span>
                                 </div>
-                                <div id="howto-score-info-stage" class="howto-score-info hidden">Later stages add more bonus points.</div>
+                                <div id="howto-score-info-stage" class="howto-score-info hidden">Faster performance in later stages are rewarded more.</div>
                             </div>
                             <div id="howto-score-formula" class="mt-3 text-xs text-muted"></div>
                         </div>
@@ -1280,7 +1280,7 @@
                 {
                     id: 4,
                     title: 'Quantum Oscillation (Coming Soon)',
-                    description: 'Quantum oscillations bending the path beyond known space.',
+                    description: 'Both here and not here.',
                     theme: { color: '#22d3ee', name: 'Zone 4' },
                     pathStyle: 'orthogonal',
                     stages: BASE_STAGES.map(stage => ({ ...stage })),
@@ -1290,8 +1290,7 @@
             initialHearts: 3,
             baseScorePerLevel: 10,
             scoring: {
-                timeBonusMultiplier: 5,
-                stageBonusMultiplier: 5
+                timeBonusMultiplier: 5
             },
             playback: {
                 speedBaseMs: 300, // ms per square
@@ -1306,7 +1305,7 @@
             input: {
                 timePerSquareBaseSec: 1.5, // Seconds per square for input
                 timePerSquareMinSec: 0.5,  // Cap for time per square
-                timePerSquareStagePenaltySec: 0.3, // Seconds reduced per stage
+                timePerSquareStagePenaltySec: 0.4, // Seconds reduced per stage
                 tickRateMs: 50,
                 lowTimeThresholdPct: 30,
                 successClearMs: 200,
@@ -2072,12 +2071,11 @@
 
             const baseScore = CONFIG.baseScorePerLevel;
             const timeBonusMax = CONFIG.scoring.timeBonusMultiplier;
-            const stageBonusStep = CONFIG.scoring.stageBonusMultiplier;
 
             baseEl.textContent = `+${baseScore}`;
             timeEl.textContent = `+1 ~ +${timeBonusMax}`;
-            stageEl.textContent = `+(stage number × ${stageBonusStep})`;
-            formulaEl.textContent = `Score per level = flat points + time bonus + stage bonus`;
+            stageEl.textContent = `x stage number`;
+            formulaEl.textContent = `Score per level = (flat points + time bonus) x stage number`;
         }
 
         function initHowToScoreToggles() {
@@ -2214,7 +2212,7 @@
                         </div>
                     </div>
                     <p class="text-sm text-muted leading-relaxed">${description}</p>
-                    ${isComingSoon ? '<div class="zone-meta">Coming Soon</div>' : `<div class="zone-meta">${scoreLine}</div>`}
+                    ${isComingSoon ? '' : `<div class="zone-meta">${scoreLine}</div>`}
                 `;
                 if (!isComingSoon) {
                     button.addEventListener('click', () => beginZone(index));
@@ -2734,11 +2732,11 @@
             state.status = 'SUCCESS';
             
             // Calculate Score
-            // Score = base + time bonus + stage bonus (using CONFIG.scoring multipliers)
+            // Score = (base + time bonus) x stage number
             const baseScore = CONFIG.baseScorePerLevel;
             const timeBonus = 1 + Math.floor((state.timerValue / state.maxTime) * CONFIG.scoring.timeBonusMultiplier);
-            const stageBonus = (state.player.stageIndex + 1) * CONFIG.scoring.stageBonusMultiplier;
-            const levelScore = baseScore + timeBonus + stageBonus;
+            const stageNumber = state.player.stageIndex + 1;
+            const levelScore = (baseScore + timeBonus) * stageNumber;
             state.player.score += levelScore;
             
             updateHUD();
@@ -2750,7 +2748,7 @@
             ui.overlayTitle.textContent = "LEVEL COMPLETE";
             ui.overlayBaseScore.textContent = `+${baseScore}`;
             ui.overlayTimeBonus.textContent = `+${timeBonus}`;
-            ui.overlayStageBonus.textContent = `+${stageBonus}`;
+            ui.overlayStageBonus.textContent = `x${stageNumber}`;
             ui.overlayTotalScore.textContent = `+${levelScore}`;
             const continueLabel = ui.btnNext.querySelector('span');
             if (continueLabel) continueLabel.textContent = "CONTINUE";
