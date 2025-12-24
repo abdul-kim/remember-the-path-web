@@ -422,6 +422,50 @@
             font-weight: 600;
         }
 
+        .zone-card {
+            background: var(--surface-2);
+            border: 1px solid var(--border-soft);
+            border-radius: var(--radius-md);
+            transition: transform 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
+        }
+
+        .zone-card:hover {
+            border-color: var(--zone-color, var(--theme-color));
+            box-shadow: 0 0 0 1px var(--zone-color, var(--theme-color)), var(--shadow-sm);
+            transform: translateY(-1px);
+        }
+
+        .zone-card:disabled,
+        .zone-card.is-locked {
+            cursor: not-allowed;
+            opacity: 0.55;
+            border-color: var(--border-soft);
+            box-shadow: none;
+            transform: none;
+        }
+
+        .zone-title {
+            font-size: 1.2rem;
+            font-weight: 700;
+            letter-spacing: 0.14em;
+            text-transform: uppercase;
+            color: var(--zone-color, var(--theme-color));
+        }
+
+        .zone-subtitle {
+            font-size: 0.7rem;
+            letter-spacing: 0.3em;
+            text-transform: uppercase;
+            color: var(--text-muted);
+        }
+
+        .zone-meta {
+            font-size: 10px;
+            letter-spacing: 0.32em;
+            text-transform: uppercase;
+            color: var(--text-faint);
+        }
+
         .leaderboard-row {
             color: var(--text-muted);
             border-bottom: 1px solid var(--border-soft);
@@ -886,7 +930,6 @@
                 </div>
                 <div class="text-right">
                     <div id="score-display" class="hud-score hidden">0</div>
-                    <div id="high-score-mini" class="hud-subscore hidden">HI: 0</div>
                 </div>
             </div>
             
@@ -925,11 +968,20 @@
                 </div>
             </div>
 
+            <!-- ZONE SELECT SCREEN -->
+            <div id="zone-screen" class="hidden absolute inset-0 z-20 flex flex-col items-center justify-center p-6 space-y-6">
+                <div id="zone-list" class="w-full max-w-md space-y-3"></div>
+                <button id="btn-zone-back" class="w-full max-w-xs btn btn-secondary btn-lg py-3 px-4 active:scale-95">Back</button>
+            </div>
+
             <!-- STAGE INTRO SCREEN -->
             <div id="stage-screen" class="hidden absolute inset-0 z-20 flex flex-col items-center justify-center p-6 space-y-6">
                 <div class="text-center space-y-2">
                     <div id="zone-title" class="eyebrow">ZONE 1</div>
-                    <h2 id="stage-title" class="text-4xl font-extrabold title-core">STAGE 1</h2>
+                    <div class="flex items-baseline justify-center gap-2">
+                        <h2 id="stage-title" class="text-4xl font-extrabold title-core">STAGE 1</h2>
+                        <span id="stage-count" class="text-xs uppercase tracking-[0.32em] text-muted">of 1</span>
+                    </div>
                 </div>
                 <div class="w-full max-w-xs panel-card p-4 text-center">
                     <div class="field-label mb-1">Difficulty</div>
@@ -1005,8 +1057,10 @@
                             <tr>
                                 <th class="p-3">Rank</th>
                                 <th class="p-3">Player</th>
-                                <th class="p-3">Zone/Stage/Level</th>
-                                <th class="p-3 text-right">Score</th>
+                                <th class="p-3 text-right">Zone 1</th>
+                                <th class="p-3 text-right">Zone 2</th>
+                                <th class="p-3 text-right">Zone 3</th>
+                                <th class="p-3 text-right">Total Score</th>
                             </tr>
                         </thead>
                         <tbody id="leaderboard-body" class="text-sm">
@@ -1172,7 +1226,7 @@
 
                 <div class="space-y-3 w-full max-w-xs">
                     <button id="btn-retry" class="w-full btn btn-primary btn-lg py-3 px-4 active:scale-95">TRY AGAIN</button>
-                    <button id="btn-home" class="w-full btn btn-ghost btn-lg py-3 px-4 active:scale-95">MAIN MENU</button>
+                    <button id="btn-home" class="w-full btn btn-ghost btn-lg py-3 px-4 active:scale-95">BACK TO ZONES</button>
                 </div>
             </div>
 
@@ -1187,41 +1241,53 @@
         /**
          * CONFIGURATION
          */
-        const APP_VERSION = 'v1.1.3';
+        const APP_VERSION = 'v1.2.0';
 
         const BASE_STAGES = [
             { id: 1, size: 3, levels: 1 },
             { id: 2, size: 4, levels: 2 },
             { id: 3, size: 5, levels: 3 },
-            { id: 4, size: 6, levels: 5 },
-            { id: 5, size: 7, levels: 8 },
+            { id: 4, size: 6, levels: 4 },
+            { id: 5, size: 7, levels: 5 },
         ];
 
         const CONFIG = {
             zones: [
                 {
                     id: 1,
-                    title: 'Zone 1',
-                    theme: { color: '#38bdf8', name: 'Cyber Blue' },
+                    title: 'Axis Flow',
+                    description: 'Straight-edge circuits carved in electric blue.',
+                    theme: { color: '#38bdf8', name: 'Zone 1' },
                     pathStyle: 'orthogonal',
                     stages: BASE_STAGES.map(stage => ({ ...stage }))
                 },
                 {
                     id: 2,
-                    title: 'Zone 2',
-                    theme: { color: '#a855f7', name: 'Neon Purple' },
+                    title: 'Vector Rush',
+                    description: 'Angled flashes slicing through the neon haze.',
+                    theme: { color: '#a855f7', name: 'Zone 2' },
                     pathStyle: 'diagonal',
                     stages: BASE_STAGES.map(stage => ({ ...stage }))
                 },
                 {
                     id: 3,
-                    title: 'Zone 3',
-                    theme: { color: '#ec4899', name: 'Neon Pulse' },
+                    title: 'Fractured Drift',
+                    description: 'Fragments drifting away from the matrix.',
+                    theme: { color: '#ec4899', name: 'Zone 3' },
                     pathStyle: 'broken-diagonal',
                     stages: BASE_STAGES.map(stage => ({ ...stage }))
+                },
+                {
+                    id: 4,
+                    title: 'Quantum Oscillation (Coming Soon)',
+                    description: 'Quantum oscillations bending the path beyond known space.',
+                    theme: { color: '#22d3ee', name: 'Zone 4' },
+                    pathStyle: 'orthogonal',
+                    stages: BASE_STAGES.map(stage => ({ ...stage })),
+                    comingSoon: true
                 }
             ],
-            initialHearts: 5,
+            initialHearts: 3,
             baseScorePerLevel: 10,
             scoring: {
                 timeBonusMultiplier: 5,
@@ -1365,6 +1431,7 @@
         // DOM Elements
         const screens = {
             menu: document.getElementById('menu-screen'),
+            zones: document.getElementById('zone-screen'),
             stage: document.getElementById('stage-screen'),
             game: document.getElementById('game-container'),
             leaderboard: document.getElementById('leaderboard-screen'),
@@ -1377,7 +1444,6 @@
             hud: document.getElementById('game-hud'),
             stageInfo: document.getElementById('stage-info'),
             scoreDisplay: document.getElementById('score-display'),
-            highScoreMini: document.getElementById('high-score-mini'),
             levelBreadcrumbs: document.getElementById('level-breadcrumbs'),
             heartsContainer: document.getElementById('hearts-container'),
             statusText: document.getElementById('status-text'),
@@ -1396,9 +1462,11 @@
             pathLine: document.getElementById('path-line'),
             zoneTitle: document.getElementById('zone-title'),
             stageTitle: document.getElementById('stage-title'),
+            stageCount: document.getElementById('stage-count'),
             stageLevelDots: document.getElementById('stage-level-dots'),
             stageDifficulty: document.getElementById('stage-difficulty'),
             playerNameInput: document.getElementById('player-name'),
+            zoneList: document.getElementById('zone-list'),
             finalScore: document.getElementById('final-score'),
             leaderboardBody: document.getElementById('leaderboard-body'),
             gameOverTitle: document.getElementById('game-over-title'),
@@ -1879,8 +1947,9 @@
             document.getElementById('btn-reset-data').addEventListener('click', resetData);
             document.getElementById('btn-next-level').addEventListener('click', advanceFromBreakdown);
             document.getElementById('btn-stage-start').addEventListener('click', startStage);
-            document.getElementById('btn-retry').addEventListener('click', restartGame);
-            document.getElementById('btn-home').addEventListener('click', goHome);
+            document.getElementById('btn-retry').addEventListener('click', restartZone);
+            document.getElementById('btn-home').addEventListener('click', goZones);
+            document.getElementById('btn-zone-back').addEventListener('click', goHome);
 
             initHowToAnimations();
             updateHowToScoreDetails();
@@ -1891,26 +1960,41 @@
             clearLevelTransitionTimers();
             const name = ui.playerNameInput.value.trim() || "Player";
             state.player.name = name;
-            state.player.score = 0;
-            state.player.hearts = CONFIG.initialHearts;
-            state.player.zoneIndex = 0;
-            state.player.stageIndex = 0;
-            state.player.levelIndex = 0;
-            
-            showStageIntro();
+            showZoneSelect();
         }
 
-        function restartGame() {
-            startGame();
+        function restartZone() {
+            beginZone(state.player.zoneIndex);
+        }
+
+        function resetPlayerForZone(zoneIndex) {
+            state.player.score = 0;
+            state.player.hearts = CONFIG.initialHearts;
+            state.player.zoneIndex = zoneIndex;
+            state.player.stageIndex = 0;
+            state.player.levelIndex = 0;
+        }
+
+        function beginZone(zoneIndex) {
+            resetPlayerForZone(zoneIndex);
+            showStageIntro();
         }
 
         function goHome() {
             clearLevelTransitionTimers();
             showScreen('menu');
+            applyZoneTheme(null);
             ui.hud.classList.add('hidden');
             ui.stageInfo.classList.add('hidden');
             ui.scoreDisplay.classList.add('hidden');
-            ui.highScoreMini.classList.add('hidden');
+        }
+
+        function goZones() {
+            clearLevelTransitionTimers();
+            showZoneSelect();
+            ui.hud.classList.add('hidden');
+            ui.stageInfo.classList.add('hidden');
+            ui.scoreDisplay.classList.add('hidden');
         }
 
         function showHowTo() {
@@ -2041,15 +2125,16 @@
             const stageNumber = state.player.stageIndex + 1;
             const difficulty = CONFIG.stageDifficulty[state.player.stageIndex] || 'Unknown';
             const zoneTitle = getZoneTitle(zone, state.player.zoneIndex);
+            const zoneStages = getZoneStages(zone);
 
             applyZoneTheme(zone);
             ui.hud.classList.add('hidden');
             ui.stageInfo.classList.add('hidden');
             ui.scoreDisplay.classList.add('hidden');
-            ui.highScoreMini.classList.add('hidden');
             updateHUD();
             if (ui.zoneTitle) ui.zoneTitle.textContent = zoneTitle;
             ui.stageTitle.textContent = `STAGE ${stageNumber}`;
+            if (ui.stageCount) ui.stageCount.textContent = `of ${zoneStages.length}`;
             renderStageLevelDots(stageConfig.levels);
             ui.stageDifficulty.textContent = difficulty;
             showScreen('stage');
@@ -2061,12 +2146,88 @@
             );
         }
 
+        function showZoneSelect() {
+            applyZoneTheme(null);
+            renderZoneList();
+            showScreen('zones');
+        }
+
+        function getZoneScoreStats(leaderboard, playerName) {
+            const playerHighs = {};
+            const topByZone = {};
+
+            leaderboard.forEach((entry) => {
+                if (!entry || !entry.name) return;
+                const zone = Number(entry.zone);
+                if (!Number.isFinite(zone)) return;
+                const score = Number(entry.score) || 0;
+
+                if (entry.name === playerName) {
+                    const current = playerHighs[zone] || 0;
+                    if (score > current) playerHighs[zone] = score;
+                }
+
+                const top = topByZone[zone];
+                if (!top || score > top.score) {
+                    topByZone[zone] = { score, name: entry.name };
+                }
+            });
+
+            return { playerHighs, topByZone };
+        }
+
+        function renderZoneList() {
+            if (!ui.zoneList) return;
+            ui.zoneList.innerHTML = '';
+
+            const leaderboard = getLeaderboard();
+            const playerName = state.player.name || (ui.playerNameInput?.value.trim() || 'Player');
+            const scoreStats = getZoneScoreStats(leaderboard, playerName);
+
+            CONFIG.zones.forEach((zone, index) => {
+                const button = document.createElement('button');
+                button.type = 'button';
+                button.className = 'zone-card w-full text-left p-4 flex flex-col gap-2';
+                const zoneTitle = getZoneTitle(zone, index);
+                const themeName = zone?.theme?.name || 'Unknown';
+                const color = zone?.theme?.color || '#38bdf8';
+                const description = zone?.description || 'Step into the path and test your memory.';
+                const isComingSoon = Boolean(zone?.comingSoon);
+                const zoneNumber = index + 1;
+                const playerHigh = scoreStats.playerHighs[zoneNumber];
+                const topScore = scoreStats.topByZone[zoneNumber];
+                const playerHighText = Number.isFinite(playerHigh) && playerHigh > 0 ? playerHigh : '—';
+                const topText = topScore ? `${topScore.score} (${topScore.name})` : '—';
+
+                button.style.setProperty('--zone-color', color);
+                if (isComingSoon) {
+                    button.disabled = true;
+                    button.classList.add('is-locked');
+                }
+                const scoreLine = `Your High: ${playerHighText} · Top: ${topText}`;
+
+                button.innerHTML = `
+                    <div class="flex items-center justify-between gap-4">
+                        <div>
+                            <div class="zone-title">${zoneTitle}</div>
+                            <div class="zone-subtitle">${themeName}</div>
+                        </div>
+                    </div>
+                    <p class="text-sm text-muted leading-relaxed">${description}</p>
+                    ${isComingSoon ? '<div class="zone-meta">Coming Soon</div>' : `<div class="zone-meta">${scoreLine}</div>`}
+                `;
+                if (!isComingSoon) {
+                    button.addEventListener('click', () => beginZone(index));
+                }
+                ui.zoneList.appendChild(button);
+            });
+        }
+
         function startStage() {
             clearLevelTransitionTimers();
             ui.hud.classList.remove('hidden');
             ui.stageInfo.classList.remove('hidden');
             ui.scoreDisplay.classList.remove('hidden');
-            ui.highScoreMini.classList.remove('hidden');
             showScreen('game');
             setupLevel({ reusePath: false, hideOverlay: false });
             showLevelIntro(() => {
@@ -2622,14 +2783,8 @@
                 state.player.levelIndex = 0;
                 
                 if (state.player.stageIndex >= zoneStages.length) {
-                    state.player.zoneIndex++;
-                    state.player.stageIndex = 0;
-
-                    // Check for Game Completion
-                    if (state.player.zoneIndex >= CONFIG.zones.length) {
-                        victory();
-                        return;
-                    }
+                    zoneComplete();
+                    return;
                 }
 
                 showStageIntro();
@@ -2656,7 +2811,7 @@
             const messages = Array.isArray(CONFIG.gameOverMessages) ? CONFIG.gameOverMessages : [];
             ui.gameOverMark.textContent = messages.length ? getRandomItem(messages) : 'Good try!';
             ui.gameOverMark.className = GAME_OVER_MARK_CLASS;
-            ui.gameOverDescription.textContent = 'You ran out of hearts...';
+            ui.gameOverDescription.textContent = '';
             showScreen('game-over');
             playToneSequence(
                 CONFIG.audio.gameOverToneFreqsHz,
@@ -2666,29 +2821,29 @@
             );
         }
 
-        function victory() {
+        function zoneComplete() {
             state.status = 'GAMEOVER';
-            const lastZoneIndex = CONFIG.zones.length - 1;
-            const lastZone = CONFIG.zones[lastZoneIndex];
-            const lastStages = getZoneStages(lastZone);
-            const lastStageIndex = Math.max(0, lastStages.length - 1);
-            const lastStage = lastStages[lastStageIndex];
+            const activeZoneIndex = state.player.zoneIndex;
+            const activeZone = getActiveZone();
+            const zoneStages = getZoneStages(activeZone);
+            const lastStageIndex = Math.max(0, zoneStages.length - 1);
+            const lastStage = zoneStages[lastStageIndex];
             const lastLevelIndex = lastStage ? lastStage.levels - 1 : 0;
 
             saveScore(
                 state.player.name,
                 state.player.score,
-                lastZoneIndex,
+                activeZoneIndex,
                 lastStageIndex,
                 lastLevelIndex
             );
             
             ui.finalScore.textContent = state.player.score;
-            ui.gameOverTitle.textContent = 'VICTORY!';
+            ui.gameOverTitle.textContent = 'ZONE CLEARED';
             ui.gameOverTitle.className = VICTORY_TITLE_CLASS;
-            ui.gameOverMark.textContent = '🏆';
+            ui.gameOverMark.textContent = '';
             ui.gameOverMark.className = VICTORY_MARK_CLASS;
-            ui.gameOverDescription.textContent = 'You completed all zones!';
+            ui.gameOverDescription.textContent = '';
             
             showScreen('game-over');
             playToneSequence(
@@ -2704,7 +2859,61 @@
          */
         function getLeaderboard() {
             const data = localStorage.getItem(CONFIG.localStorageKey);
-            return data ? JSON.parse(data) : [];
+            if (!data) return [];
+            try {
+                const parsed = JSON.parse(data);
+                return Array.isArray(parsed) ? parsed : [];
+            } catch (error) {
+                return [];
+            }
+        }
+
+        function getLeaderboardZoneNumbers() {
+            const zoneNumbers = CONFIG.zones.reduce((list, zone, index) => {
+                if (zone && zone.comingSoon) return list;
+                list.push(index + 1);
+                return list;
+            }, []);
+            return zoneNumbers.slice(0, 3);
+        }
+
+        function getPlayerSummaries(leaderboard) {
+            const zoneNumbers = getLeaderboardZoneNumbers();
+            const players = new Map();
+
+            leaderboard.forEach((entry) => {
+                if (!entry || !entry.name) return;
+                const zone = Number(entry.zone);
+                if (!zoneNumbers.includes(zone)) return;
+                const score = Number(entry.score) || 0;
+                let summary = players.get(entry.name);
+                if (!summary) {
+                    summary = { name: entry.name, zones: {}, total: 0 };
+                    players.set(entry.name, summary);
+                }
+                if (!(zone in summary.zones) || score > summary.zones[zone]) {
+                    summary.zones[zone] = score;
+                }
+            });
+
+            const summaries = Array.from(players.values());
+            summaries.forEach((summary) => {
+                summary.total = zoneNumbers.reduce((sum, zone) => sum + (summary.zones[zone] || 0), 0);
+            });
+
+            summaries.sort((a, b) => {
+                if (b.total !== a.total) return b.total - a.total;
+                return a.name.localeCompare(b.name);
+            });
+
+            return { summaries, zoneNumbers };
+        }
+
+        function getPlayerTotalScore(name, leaderboard) {
+            if (!name) return 0;
+            const { summaries } = getPlayerSummaries(leaderboard || getLeaderboard());
+            const player = summaries.find((summary) => summary.name === name);
+            return player ? player.total : 0;
         }
 
         function saveScore(name, score, zoneIndex, stageIndex, levelIndex) {
@@ -2713,12 +2922,11 @@
             const stage = Number.isInteger(stageIndex) ? stageIndex + 1 : null;
             const level = Number.isInteger(levelIndex) ? levelIndex + 1 : null;
             
-            // Check if user exists, update if score higher
-            const existingIndex = lb.findIndex(entry => entry.name === name);
+            // Check if user has a score for this zone, update if higher
+            const existingIndex = lb.findIndex(entry => entry.name === name && entry.zone === zone);
             if (existingIndex > -1) {
                 if (score > lb[existingIndex].score) {
                     lb[existingIndex].score = score;
-                    lb[existingIndex].zone = zone;
                     lb[existingIndex].stage = stage;
                     lb[existingIndex].level = level;
                     lb[existingIndex].date = new Date().toISOString();
@@ -2727,30 +2935,28 @@
                 lb.push({ name, score, zone, stage, level, date: new Date().toISOString() });
             }
 
-            // Sort
-            lb.sort((a, b) => b.score - a.score);
-            
-            // Limit size
-            lb = lb.slice(0, CONFIG.leaderboard.maxEntries);
-
             localStorage.setItem(CONFIG.localStorageKey, JSON.stringify(lb));
             updateMiniHighScore();
         }
 
         function updateMiniHighScore() {
             const lb = getLeaderboard();
-            const high = lb.length > 0 ? lb[0].score : 0;
-            ui.highScoreMini.textContent = `HI: ${high}`;
+            const { summaries } = getPlayerSummaries(lb);
+            const high = summaries.length ? summaries[0].total : 0;
+            if (ui.highScoreMini) {
+                ui.highScoreMini.textContent = `HI: ${high}`;
+            }
         }
 
         function showLeaderboard() {
             const lb = getLeaderboard();
             ui.leaderboardBody.innerHTML = '';
-            
-            if (lb.length === 0) {
-                ui.leaderboardBody.innerHTML = '<tr><td colspan="4" class="p-4 text-center text-muted">No scores yet. Be the first!</td></tr>';
+            const { summaries, zoneNumbers } = getPlayerSummaries(lb);
+
+            if (summaries.length === 0) {
+                ui.leaderboardBody.innerHTML = '<tr><td colspan="6" class="p-4 text-center text-muted">No scores yet. Be the first!</td></tr>';
             } else {
-                lb.forEach((entry, idx) => {
+                summaries.forEach((summary, idx) => {
                     const row = document.createElement('tr');
                     row.className = idx < CONFIG.leaderboard.highlightTopCount
                         ? 'leaderboard-row is-highlight'
@@ -2758,16 +2964,19 @@
                     const icon = CONFIG.leaderboard.topRankIcons[idx]
                         ? `${CONFIG.leaderboard.topRankIcons[idx]} `
                         : '';
-                    const zoneNumber = Number.isInteger(entry.zone) ? entry.zone : 1;
-                    const zoneText = `Z${zoneNumber}`;
-                    const stageText = entry.stage ? `S${entry.stage}` : 'S--';
-                    const levelText = entry.level ? `L${entry.level}` : 'L--';
-                    
+
+                    const zoneValues = zoneNumbers.map((zone) => {
+                        const hasScore = Object.prototype.hasOwnProperty.call(summary.zones, zone);
+                        const scoreText = hasScore ? summary.zones[zone] : '—';
+                        const classes = hasScore ? '' : 'text-muted';
+                        return `<td class="p-3 text-right font-mono ${classes}">${scoreText}</td>`;
+                    }).join('');
+
                     row.innerHTML = `
                         <td class="p-3">${icon}#${idx + 1}</td>
-                        <td class="p-3 truncate max-w-[120px]">${entry.name}</td>
-                        <td class="p-3 font-mono">${zoneText} ${stageText} ${levelText}</td>
-                        <td class="p-3 text-right font-mono">${entry.score}</td>
+                        <td class="p-3 truncate max-w-[140px]">${summary.name}</td>
+                        ${zoneValues}
+                        <td class="p-3 text-right font-mono">${summary.total}</td>
                     `;
                     ui.leaderboardBody.appendChild(row);
                 });
@@ -2793,6 +3002,7 @@
         function showScreen(screenName) {
             Object.values(screens).forEach(s => s.classList.add('hidden'));
             if (screenName === 'menu') screens.menu.classList.remove('hidden');
+            if (screenName === 'zones') screens.zones.classList.remove('hidden');
             if (screenName === 'stage') screens.stage.classList.remove('hidden');
             if (screenName === 'game') screens.game.classList.remove('hidden');
             if (screenName === 'howto') screens.howto.classList.remove('hidden');
