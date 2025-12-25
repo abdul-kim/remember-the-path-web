@@ -410,7 +410,9 @@
             border: 1px solid var(--border-soft);
             border-radius: var(--radius-lg);
             box-shadow: var(--shadow-lg);
-            overflow: hidden;
+            overflow: auto;
+            max-width: 100%;
+            -webkit-overflow-scrolling: touch;
         }
 
         .table-shell thead {
@@ -480,6 +482,7 @@
         /* Custom Scrollbar for Leaderboard */
         .custom-scroll::-webkit-scrollbar {
             width: 6px;
+            height: 6px;
         }
         .custom-scroll::-webkit-scrollbar-track {
             background: var(--surface-3);
@@ -527,16 +530,23 @@
             border-color: var(--theme-color);
         }
 
+        .cell.phantom {
+            background-color: #f87171; /* Red 400 */
+            box-shadow: 0 0 15px #f87171;
+            border-color: #f87171;
+            animation: phantom-glitch 0.35s linear infinite;
+        }
+
         .cell.success {
-            background-color: #4ade80; /* Green 400 */
-            box-shadow: 0 0 15px #4ade80;
-            border-color: #4ade80;
+            background-color: var(--theme-color);
+            box-shadow: 0 0 15px var(--theme-shadow);
+            border-color: var(--theme-color);
         }
 
         .cell.correct {
-            background-color: #4ade80; /* Green 400 */
-            box-shadow: 0 0 15px #4ade80;
-            border-color: #4ade80;
+            background-color: var(--theme-color);
+            box-shadow: 0 0 15px var(--theme-shadow);
+            border-color: var(--theme-color);
         }
 
         .cell.error {
@@ -757,6 +767,15 @@
             40%, 60% { transform: translate3d(4px, 0, 0); }
         }
 
+        @keyframes phantom-glitch {
+            0% { transform: translate3d(0, 0, 0) scale(0.98); }
+            20% { transform: translate3d(-1px, 1px, 0) scale(0.98); }
+            40% { transform: translate3d(1px, -1px, 0) scale(0.99); }
+            60% { transform: translate3d(-2px, 0, 0) scale(0.98); }
+            80% { transform: translate3d(2px, 1px, 0) scale(0.99); }
+            100% { transform: translate3d(0, 0, 0) scale(0.98); }
+        }
+
         @keyframes title-glide {
             0% { background-position: 0% 50%; }
             100% { background-position: 200% 50%; }
@@ -811,6 +830,10 @@
             }
 
             .heart-icon.is-full {
+                animation: none;
+            }
+
+            .cell.phantom {
                 animation: none;
             }
 
@@ -1046,7 +1069,7 @@
             </div>
 
             <!-- LEADERBOARD SCREEN -->
-            <div id="leaderboard-screen" class="hidden absolute inset-0 z-30 flex flex-col p-6">
+            <div id="leaderboard-screen" class="hidden fixed inset-0 z-30 flex flex-col p-4 sm:p-6">
                 <div class="flex justify-between items-center mb-6">
                     <h2 class="text-2xl font-bold title-core">Leaderboard</h2>
                     <button id="btn-close-leaderboard" class="btn btn-secondary btn-sm py-2 px-3">Close</button>
@@ -1060,6 +1083,7 @@
                                 <th class="p-3 text-right">Zone 1</th>
                                 <th class="p-3 text-right">Zone 2</th>
                                 <th class="p-3 text-right">Zone 3</th>
+                                <th class="p-3 text-right">Zone 4</th>
                                 <th class="p-3 text-right">Total Score</th>
                             </tr>
                         </thead>
@@ -1241,7 +1265,7 @@
         /**
          * CONFIGURATION
          */
-        const APP_VERSION = 'v1.3.1';
+        const APP_VERSION = 'v1.4.0';
 
         const BASE_STAGES = [
             { id: 1, size: 3, levels: 1 },
@@ -1279,12 +1303,13 @@
                 },
                 {
                     id: 4,
-                    title: 'Quantum Oscillation (Coming Soon)',
+                    title: 'Quantum Oscillation',
                     description: 'Both here and not here.',
-                    theme: { color: '#22d3ee', name: 'Zone 4' },
-                    pathStyle: 'orthogonal',
-                    stages: BASE_STAGES.map(stage => ({ ...stage })),
-                    comingSoon: true
+                    theme: { color: '#34d399', name: 'Zone 4' },
+                    pathStyle: 'broken-diagonal',
+                    mechanic: 'superposition',
+                    decoyChance: 0.25,
+                    stages: BASE_STAGES.map(stage => ({ ...stage }))
                 }
             ],
             initialHearts: 3,
@@ -1344,6 +1369,9 @@
                     minGapDistance: 2,
                     segmentPauseMs: 240
                 }
+            },
+            superposition: {
+                decoyChance: 0.5
             },
             audio: {
                 gainStart: 0.1,
@@ -1412,6 +1440,7 @@
             grid: [],
             path: [], // Array of {r, c}
             pathSegments: [],
+            decoys: [],
             inputIndex: 0,
             timer: null,
             timerValue: 0,
@@ -1513,24 +1542,56 @@
                 );
 
                 const pathStyle = zone?.pathStyle || 'orthogonal';
+                let result;
 
                 if (pathStyle === 'broken-diagonal') {
-                    return this.generateBrokenPath({ size, targetLength, minTurns });
+                    result = this.generateBrokenPath({ size, targetLength, minTurns });
+                } else {
+                    const allowDiagonal = pathStyle === 'diagonal';
+                    const path = this.generateContinuousPath({
+                        size,
+                        targetLength,
+                        minTurns,
+                        allowDiagonal
+                    });
+                    const finalPath = this.ensureFallbackPath(path, size);
+                    result = {
+                        path: finalPath,
+                        segments: finalPath.map(() => 0)
+                    };
                 }
 
-                const allowDiagonal = pathStyle === 'diagonal';
-                const path = this.generateContinuousPath({
-                    size,
-                    targetLength,
-                    minTurns,
-                    allowDiagonal
-                });
-                const finalPath = this.ensureFallbackPath(path, size);
+                if (zone?.mechanic === 'superposition') {
+                    const decoyChance = Number.isFinite(zone?.decoyChance)
+                        ? zone.decoyChance
+                        : CONFIG.superposition.decoyChance;
+                    result.decoys = this.generateDecoys(result.path, size, decoyChance);
+                } else {
+                    result.decoys = [];
+                }
 
-                return {
-                    path: finalPath,
-                    segments: finalPath.map(() => 0)
-                };
+                return result;
+            },
+
+            generateDecoys(path, size, decoyChance = 0.5) {
+                if (!Array.isArray(path) || !path.length || size <= 1) {
+                    return Array.isArray(path) ? path.map(() => null) : [];
+                }
+
+                const chance = Math.min(1, Math.max(0, Number(decoyChance) || 0));
+                return path.map((step) => {
+                    if (Math.random() >= chance) return null;
+                    let r = step.r;
+                    let c = step.c;
+                    let attempts = 0;
+                    while (attempts < 20 && r === step.r && c === step.c) {
+                        r = getRandomInt(0, size - 1);
+                        c = getRandomInt(0, size - 1);
+                        attempts++;
+                    }
+                    if (r === step.r && c === step.c) return null;
+                    return { r, c };
+                });
             },
 
             generateContinuousPath({ size, targetLength, minTurns, allowDiagonal, blocked, startConstraint }) {
@@ -2426,10 +2487,17 @@
                 state.pathSegments = Array.isArray(generated.segments)
                     ? generated.segments
                     : state.path.map(() => 0);
+                state.decoys = Array.isArray(generated.decoys)
+                    ? generated.decoys
+                    : state.path.map(() => null);
             }
 
             if (!Array.isArray(state.pathSegments) || state.pathSegments.length !== state.path.length) {
                 state.pathSegments = state.path.map(() => 0);
+            }
+
+            if (!Array.isArray(state.decoys) || state.decoys.length !== state.path.length) {
+                state.decoys = state.path.map(() => null);
             }
         }
 
@@ -2439,7 +2507,7 @@
             ui.grid.classList.add('grid-no-transitions');
             void ui.grid.offsetHeight;
             state.grid.forEach(({ el }) => {
-                el.classList.remove('active', 'error', 'reveal', 'success', 'correct');
+                el.classList.remove('active', 'phantom', 'error', 'reveal', 'success', 'correct');
                 el.style.pointerEvents = '';
             });
             requestAnimationFrame(() => {
@@ -2539,6 +2607,7 @@
                 ? CONFIG.path.broken.segmentPauseMs
                 : 0;
             const segmentIds = Array.isArray(state.pathSegments) ? state.pathSegments : [];
+            const decoys = Array.isArray(state.decoys) ? state.decoys : [];
             
             for (let i = 0; i < state.path.length; i++) {
                 if (segmentPauseMs && i > 0 && segmentIds[i] !== segmentIds[i - 1]) {
@@ -2547,9 +2616,14 @@
 
                 const {r, c} = state.path[i];
                 const el = getCell(r, c);
+                const decoy = decoys[i];
+                const decoyEl = decoy ? getCell(decoy.r, decoy.c) : null;
                 
                 // Highlight
                 el.classList.add('active');
+                if (decoyEl && decoyEl !== el) {
+                    decoyEl.classList.add('phantom');
+                }
                 playTone(
                     CONFIG.playback.toneBaseHz + (i * CONFIG.playback.toneStepHz),
                     'sine',
@@ -2560,6 +2634,9 @@
                 
                 // Unhighlight (keep a small gap if it's the same cell - though path gen usually moves)
                 el.classList.remove('active');
+                if (decoyEl && decoyEl !== el) {
+                    decoyEl.classList.remove('phantom');
+                }
                 await new Promise(res => setTimeout(res, speed * CONFIG.playback.gapRatio));
             }
 
@@ -2899,7 +2976,7 @@
                 list.push(index + 1);
                 return list;
             }, []);
-            return zoneNumbers.slice(0, 3);
+            return zoneNumbers.slice(0, 4);
         }
 
         function getPlayerSummaries(leaderboard) {
@@ -2988,7 +3065,7 @@
             const { summaries, zoneNumbers } = getPlayerSummaries(lb);
 
             if (summaries.length === 0) {
-                ui.leaderboardBody.innerHTML = '<tr><td colspan="6" class="p-4 text-center text-muted">No scores yet. Be the first!</td></tr>';
+                ui.leaderboardBody.innerHTML = '<tr><td colspan="7" class="p-4 text-center text-muted">No scores yet. Be the first!</td></tr>';
             } else {
                 summaries.forEach((summary, idx) => {
                     const row = document.createElement('tr');
