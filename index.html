@@ -1412,7 +1412,7 @@
                 appsScriptUrl: 'https://script.google.com/macros/s/AKfycby4sZKUsBQDWR2rMuDcz7smnfEn2Q-5UmKRfs1zgxhc0hL2utdf7KiMx39dkKXJRguP/exec',
                 requestTimeoutMs: 7000,
                 cacheTtlMs: 30000,
-                allowReset: true
+                allowReset: false
             },
             timing: {
                 msPerSecond: 1000
@@ -3173,7 +3173,7 @@
                 return 'Local leaderboard only.';
             }
             if (isLoading) {
-                return 'Syncing with Google Sheets...';
+                return 'Syncing...';
             }
             if (leaderboardState.lastError) {
                 return 'Unable to sync. Showing cached scores.';

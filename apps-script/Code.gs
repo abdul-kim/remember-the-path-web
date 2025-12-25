@@ -1,5 +1,5 @@
 const SHEET_NAME = 'Leaderboard';
-const ALLOW_RESET = true;
+const ALLOW_RESET = false;
 
 function getSheet_() {
   const ss = SpreadsheetApp.getActiveSpreadsheet();
