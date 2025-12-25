@@ -207,6 +207,11 @@
             box-shadow: 0 0 0 2px var(--theme-shadow-soft);
         }
 
+        .input-field.is-invalid {
+            border-color: #f87171;
+            box-shadow: 0 0 0 2px rgba(248, 113, 113, 0.35);
+        }
+
         .btn {
             display: inline-flex;
             align-items: center;
@@ -983,7 +988,8 @@
                 <div class="w-full max-w-xs panel-card p-4 space-y-4">
                     <div>
                         <label class="field-label block mb-1">Player Name</label>
-                        <input type="text" id="player-name" class="input-field w-full p-3" placeholder="Enter name" maxlength="10">
+                        <input type="text" id="player-name" class="input-field w-full p-3" placeholder="Enter name" maxlength="10" required aria-required="true">
+                        <div id="player-name-error" class="mt-2 text-xs text-red-400 hidden" role="alert">Please enter a name to start.</div>
                     </div>
                     <button id="btn-start" class="w-full btn btn-primary btn-lg py-3 px-4 active:scale-95">START GAME</button>
                     <button id="btn-howto" class="w-full btn btn-secondary btn-lg py-3 px-4 active:scale-95">HOW TO PLAY</button>
@@ -1092,6 +1098,7 @@
                         </tbody>
                     </table>
                 </div>
+                <div id="leaderboard-status" class="mt-2 text-center text-xs text-muted"></div>
                 <div class="mt-4 text-center">
                     <button id="btn-reset-data" class="btn btn-ghost btn-danger btn-sm py-2 px-3">Clear Data</button>
                 </div>
@@ -1265,7 +1272,7 @@
         /**
          * CONFIGURATION
          */
-        const APP_VERSION = 'v1.4.1';
+        const APP_VERSION = 'v1.5.0';
 
         const BASE_STAGES = [
             { id: 1, size: 3, levels: 1 },
@@ -1401,7 +1408,11 @@
             leaderboard: {
                 maxEntries: 50,
                 highlightTopCount: 3,
-                topRankIcons: ['👑', '🥈', '🥉']
+                topRankIcons: ['👑', '🥈', '🥉'],
+                appsScriptUrl: 'https://script.google.com/macros/s/AKfycby4sZKUsBQDWR2rMuDcz7smnfEn2Q-5UmKRfs1zgxhc0hL2utdf7KiMx39dkKXJRguP/exec',
+                requestTimeoutMs: 7000,
+                cacheTtlMs: 30000,
+                allowReset: true
             },
             timing: {
                 msPerSecond: 1000
@@ -1445,6 +1456,14 @@
             timer: null,
             timerValue: 0,
             maxTime: 0
+        };
+
+        const leaderboardState = {
+            cache: [],
+            cacheLoaded: false,
+            lastFetchedAt: 0,
+            lastError: null,
+            pendingFetch: null
         };
 
         const howtoTimers = {
@@ -1497,9 +1516,11 @@
             stageLevelDots: document.getElementById('stage-level-dots'),
             stageDifficulty: document.getElementById('stage-difficulty'),
             playerNameInput: document.getElementById('player-name'),
+            playerNameError: document.getElementById('player-name-error'),
             zoneList: document.getElementById('zone-list'),
             finalScore: document.getElementById('final-score'),
             leaderboardBody: document.getElementById('leaderboard-body'),
+            leaderboardStatus: document.getElementById('leaderboard-status'),
             gameOverTitle: document.getElementById('game-over-title'),
             gameOverMark: document.getElementById('game-over-mark'),
             gameOverDescription: document.getElementById('game-over-description')
@@ -1999,6 +2020,15 @@
             return String(name || '').trim().toLowerCase();
         }
 
+        function setPlayerNameValidity(isValid) {
+            if (!ui.playerNameInput) return;
+            ui.playerNameInput.classList.toggle('is-invalid', !isValid);
+            ui.playerNameInput.setAttribute('aria-invalid', String(!isValid));
+            if (ui.playerNameError) {
+                ui.playerNameError.classList.toggle('hidden', isValid);
+            }
+        }
+
         /**
          * GAME LOGIC
          */
@@ -2013,7 +2043,16 @@
             });
 
             // Load High Score
+            getLeaderboard();
             updateMiniHighScore();
+            refreshLeaderboard().then(() => {
+                updateMiniHighScore();
+            });
+
+            const resetButton = document.getElementById('btn-reset-data');
+            if (resetButton && !CONFIG.leaderboard.allowReset && hasRemoteLeaderboard()) {
+                resetButton.textContent = 'Clear Cache';
+            }
             
             // Event Listeners
             document.getElementById('btn-start').addEventListener('click', withUiClickSound(startGame));
@@ -2030,6 +2069,14 @@
             document.getElementById('btn-home').addEventListener('click', withUiClickSound(goZones));
             document.getElementById('btn-zone-back').addEventListener('click', withUiClickSound(goHome));
 
+            if (ui.playerNameInput) {
+                ui.playerNameInput.addEventListener('input', () => {
+                    if (ui.playerNameInput.value.trim()) {
+                        setPlayerNameValidity(true);
+                    }
+                });
+            }
+
             initHowToAnimations();
             updateHowToScoreDetails();
             initHowToScoreToggles();
@@ -2037,7 +2084,13 @@
 
         function startGame() {
             clearLevelTransitionTimers();
-            const name = ui.playerNameInput.value.trim() || "Player";
+            const name = ui.playerNameInput ? ui.playerNameInput.value.trim() : '';
+            if (!name) {
+                setPlayerNameValidity(false);
+                if (ui.playerNameInput) ui.playerNameInput.focus();
+                return;
+            }
+            setPlayerNameValidity(true);
             state.player.name = name;
             showZoneSelect();
         }
@@ -2235,6 +2288,11 @@
             applyZoneTheme(null);
             renderZoneList();
             showScreen('zones');
+            refreshLeaderboard().then(() => {
+                if (!screens.zones.classList.contains('hidden')) {
+                    renderZoneList();
+                }
+            });
         }
 
         function getZoneScoreStats(leaderboard, playerName) {
@@ -2959,7 +3017,12 @@
         /**
          * PERSISTENCE & LEADERBOARD
          */
-        function getLeaderboard() {
+        function hasRemoteLeaderboard() {
+            return typeof CONFIG.leaderboard.appsScriptUrl === 'string'
+                && CONFIG.leaderboard.appsScriptUrl.trim().length > 0;
+        }
+
+        function loadLeaderboardCache() {
             const data = localStorage.getItem(CONFIG.localStorageKey);
             if (!data) return [];
             try {
@@ -2968,6 +3031,158 @@
             } catch (error) {
                 return [];
             }
+        }
+
+        function setLeaderboardCache(entries, { persist = true } = {}) {
+            leaderboardState.cache = Array.isArray(entries) ? entries : [];
+            leaderboardState.cacheLoaded = true;
+            if (persist) {
+                localStorage.setItem(CONFIG.localStorageKey, JSON.stringify(leaderboardState.cache));
+            }
+        }
+
+        function getLeaderboard() {
+            if (!leaderboardState.cacheLoaded) {
+                setLeaderboardCache(loadLeaderboardCache(), { persist: false });
+            }
+            return leaderboardState.cache;
+        }
+
+        function normalizeLeaderboardEntry(entry) {
+            if (!entry || typeof entry !== 'object') return null;
+            const name = String(entry.name || '').trim();
+            if (!name) return null;
+            const score = Number(entry.score) || 0;
+            const zone = Number(entry.zone);
+            const stage = Number(entry.stage);
+            const level = Number(entry.level);
+            const date = entry.date || entry.timestamp || entry.time || '';
+            return {
+                name,
+                score,
+                zone: Number.isFinite(zone) ? zone : null,
+                stage: Number.isFinite(stage) ? stage : null,
+                level: Number.isFinite(level) ? level : null,
+                date: date ? String(date) : ''
+            };
+        }
+
+        function normalizeLeaderboardEntries(entries) {
+            if (!Array.isArray(entries)) return [];
+            return entries.map(normalizeLeaderboardEntry).filter(Boolean);
+        }
+
+        function buildLeaderboardUrl() {
+            const base = CONFIG.leaderboard.appsScriptUrl.trim();
+            if (!base) return '';
+            const url = new URL(base);
+            url.searchParams.set('t', Date.now());
+            return url.toString();
+        }
+
+        function shouldRefreshLeaderboard() {
+            if (!hasRemoteLeaderboard()) return false;
+            const ttl = Number(CONFIG.leaderboard.cacheTtlMs);
+            if (!ttl) return true;
+            if (!leaderboardState.lastFetchedAt) return true;
+            return (Date.now() - leaderboardState.lastFetchedAt) > ttl;
+        }
+
+        async function fetchWithTimeout(url, options = {}) {
+            const timeoutMs = Number(CONFIG.leaderboard.requestTimeoutMs) || 7000;
+            const controller = new AbortController();
+            const timeout = setTimeout(() => controller.abort(), timeoutMs);
+            try {
+                return await fetch(url, { ...options, signal: controller.signal });
+            } finally {
+                clearTimeout(timeout);
+            }
+        }
+
+        function refreshLeaderboard({ force = false } = {}) {
+            if (!hasRemoteLeaderboard()) return Promise.resolve(getLeaderboard());
+            if (!force && !shouldRefreshLeaderboard()) return Promise.resolve(getLeaderboard());
+            if (leaderboardState.pendingFetch) return leaderboardState.pendingFetch;
+
+            leaderboardState.lastError = null;
+
+            leaderboardState.pendingFetch = (async () => {
+                try {
+                    const response = await fetchWithTimeout(buildLeaderboardUrl(), {
+                        method: 'GET',
+                        cache: 'no-store'
+                    });
+                    if (!response.ok) {
+                        throw new Error(`Leaderboard request failed (${response.status})`);
+                    }
+                    const data = await response.json();
+                    const entries = normalizeLeaderboardEntries(
+                        Array.isArray(data)
+                            ? data
+                            : Array.isArray(data.entries)
+                                ? data.entries
+                                : Array.isArray(data.data)
+                                    ? data.data
+                                    : []
+                    );
+                    setLeaderboardCache(entries);
+                    leaderboardState.lastFetchedAt = Date.now();
+                    updateMiniHighScore();
+                    return entries;
+                } catch (error) {
+                    leaderboardState.lastError = error;
+                    return getLeaderboard();
+                }
+            })();
+
+            return leaderboardState.pendingFetch.finally(() => {
+                leaderboardState.pendingFetch = null;
+            });
+        }
+
+        async function postLeaderboardPayload(payload) {
+            if (!hasRemoteLeaderboard()) return { ok: false, reason: 'no-remote' };
+
+            try {
+                const response = await fetchWithTimeout(CONFIG.leaderboard.appsScriptUrl, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+                    body: JSON.stringify(payload)
+                });
+
+                if (!response.ok) {
+                    throw new Error(`Leaderboard write failed (${response.status})`);
+                }
+
+                let data = null;
+                try {
+                    data = await response.json();
+                } catch (error) {
+                    data = null;
+                }
+
+                return { ok: true, data };
+            } catch (error) {
+                leaderboardState.lastError = error;
+                return { ok: false, error };
+            }
+        }
+
+        function getLeaderboardStatusMessage({ isLoading = false } = {}) {
+            if (!hasRemoteLeaderboard()) {
+                return 'Local leaderboard only.';
+            }
+            if (isLoading) {
+                return 'Syncing with Google Sheets...';
+            }
+            if (leaderboardState.lastError) {
+                return 'Unable to sync. Showing cached scores.';
+            }
+            if (leaderboardState.lastFetchedAt) {
+                const stamp = new Date(leaderboardState.lastFetchedAt);
+                return `Synced at ${stamp.toLocaleTimeString()}.`;
+            }
+            return '';
         }
 
         function getLeaderboardZoneNumbers() {
@@ -3023,31 +3238,45 @@
 
         function saveScore(name, score, zoneIndex, stageIndex, levelIndex) {
             let lb = getLeaderboard();
+            const safeName = String(name || 'Player').trim() || 'Player';
+            const safeScore = Number(score) || 0;
             const zone = Number.isInteger(zoneIndex) ? zoneIndex + 1 : null;
             const stage = Number.isInteger(stageIndex) ? stageIndex + 1 : null;
             const level = Number.isInteger(levelIndex) ? levelIndex + 1 : null;
+            const entry = {
+                name: safeName,
+                score: safeScore,
+                zone,
+                stage,
+                level,
+                date: new Date().toISOString()
+            };
             
             // Check if user has a score for this zone, update if higher
-            const nameKey = normalizePlayerName(name);
+            const nameKey = normalizePlayerName(safeName);
             const existingIndex = lb.findIndex(entry => {
                 return normalizePlayerName(entry.name) === nameKey && entry.zone === zone;
             });
             if (existingIndex > -1) {
-                if (lb[existingIndex].name !== name) {
-                    lb[existingIndex].name = name;
+                if (lb[existingIndex].name !== safeName) {
+                    lb[existingIndex].name = safeName;
                 }
-                if (score > lb[existingIndex].score) {
-                    lb[existingIndex].score = score;
+                if (safeScore > lb[existingIndex].score) {
+                    lb[existingIndex].score = safeScore;
                     lb[existingIndex].stage = stage;
                     lb[existingIndex].level = level;
-                    lb[existingIndex].date = new Date().toISOString();
+                    lb[existingIndex].date = entry.date;
                 }
             } else {
-                lb.push({ name, score, zone, stage, level, date: new Date().toISOString() });
+                lb.push(entry);
             }
 
-            localStorage.setItem(CONFIG.localStorageKey, JSON.stringify(lb));
+            setLeaderboardCache(lb);
             updateMiniHighScore();
+
+            if (hasRemoteLeaderboard()) {
+                postLeaderboardPayload(entry);
+            }
         }
 
         function updateMiniHighScore() {
@@ -3059,15 +3288,21 @@
             }
         }
 
-        function showLeaderboard() {
-            const lb = getLeaderboard();
+        function renderLeaderboard(leaderboard, { emptyMessage, statusMessage } = {}) {
             ui.leaderboardBody.innerHTML = '';
-            const { summaries, zoneNumbers } = getPlayerSummaries(lb);
+            const { summaries, zoneNumbers } = getPlayerSummaries(leaderboard || []);
+            const columnCount = zoneNumbers.length + 3;
 
             if (summaries.length === 0) {
-                ui.leaderboardBody.innerHTML = '<tr><td colspan="7" class="p-4 text-center text-muted">No scores yet. Be the first!</td></tr>';
+                const message = emptyMessage || 'No scores yet. Be the first!';
+                ui.leaderboardBody.innerHTML = `<tr><td colspan="${columnCount}" class="p-4 text-center text-muted">${message}</td></tr>`;
             } else {
-                summaries.forEach((summary, idx) => {
+                const maxEntries = Number(CONFIG.leaderboard.maxEntries) || 0;
+                const displaySummaries = maxEntries > 0
+                    ? summaries.slice(0, maxEntries)
+                    : summaries;
+
+                displaySummaries.forEach((summary, idx) => {
                     const row = document.createElement('tr');
                     row.className = idx < CONFIG.leaderboard.highlightTopCount
                         ? 'leaderboard-row is-highlight'
@@ -3092,19 +3327,64 @@
                     ui.leaderboardBody.appendChild(row);
                 });
             }
+
+            if (ui.leaderboardStatus) {
+                ui.leaderboardStatus.textContent = statusMessage || '';
+            }
+        }
+
+        function showLeaderboard() {
             screens.leaderboard.classList.remove('hidden');
+            const cached = getLeaderboard();
+            const isRemote = hasRemoteLeaderboard();
+            renderLeaderboard(cached, {
+                emptyMessage: isRemote ? 'Loading leaderboard...' : 'No scores yet. Be the first!',
+                statusMessage: getLeaderboardStatusMessage({ isLoading: isRemote })
+            });
+
+            if (isRemote) {
+                refreshLeaderboard({ force: true }).then((entries) => {
+                    renderLeaderboard(entries, { statusMessage: getLeaderboardStatusMessage() });
+                });
+            }
         }
 
         function hideLeaderboard() {
             screens.leaderboard.classList.add('hidden');
         }
 
-        function resetData() {
-            if(confirm("Clear all leaderboard data? This cannot be undone.")) {
-                localStorage.removeItem(CONFIG.localStorageKey);
-                showLeaderboard(); // Refresh view
-                updateMiniHighScore();
+        async function resetData() {
+            const isRemote = hasRemoteLeaderboard();
+            const canResetRemote = isRemote && CONFIG.leaderboard.allowReset;
+            const prompt = (isRemote && !CONFIG.leaderboard.allowReset)
+                ? 'Clear cached leaderboard data on this device?'
+                : 'Clear all leaderboard data? This cannot be undone.';
+
+            if (!confirm(prompt)) return;
+
+            if (canResetRemote) {
+                const result = await postLeaderboardPayload({ action: 'reset' });
+                if (!result.ok) {
+                    renderLeaderboard(getLeaderboard(), {
+                        statusMessage: 'Reset failed. Showing cached scores.'
+                    });
+                    return;
+                }
             }
+
+            setLeaderboardCache([]);
+            updateMiniHighScore();
+            leaderboardState.lastFetchedAt = 0;
+            leaderboardState.lastError = null;
+
+            const statusMessage = (isRemote && !CONFIG.leaderboard.allowReset)
+                ? 'Cache cleared. Reopen to sync.'
+                : (canResetRemote ? 'Leaderboard cleared.' : getLeaderboardStatusMessage());
+
+            renderLeaderboard(getLeaderboard(), {
+                emptyMessage: 'No scores yet. Be the first!',
+                statusMessage
+            });
         }
 
         /**
