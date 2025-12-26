@@ -1477,7 +1477,7 @@
         /**
          * CONFIGURATION
          */
-        const APP_VERSION = 'v1.5.10';
+        const APP_VERSION = 'v1.5.11';
 
         const BASE_STAGES = [
             { id: 1, size: 3, levels: 1 },
@@ -3740,13 +3740,26 @@
                     ? summaries.slice(0, maxEntries)
                     : summaries;
 
+                const ranks = [];
+                let lastScore = null;
+                let currentRank = 0;
+                displaySummaries.forEach((summary) => {
+                    const totalScore = Number(summary.total) || 0;
+                    if (lastScore === null || totalScore !== lastScore) {
+                        currentRank += 1;
+                        lastScore = totalScore;
+                    }
+                    ranks.push(currentRank);
+                });
+
                 displaySummaries.forEach((summary, idx) => {
+                    const rank = ranks[idx] || (idx + 1);
                     const row = document.createElement('tr');
-                    row.className = idx < CONFIG.leaderboard.highlightTopCount
+                    row.className = rank <= CONFIG.leaderboard.highlightTopCount
                         ? 'leaderboard-row is-highlight'
                         : 'leaderboard-row';
-                    const icon = CONFIG.leaderboard.topRankIcons[idx]
-                        ? `${CONFIG.leaderboard.topRankIcons[idx]} `
+                    const icon = CONFIG.leaderboard.topRankIcons[rank - 1]
+                        ? `${CONFIG.leaderboard.topRankIcons[rank - 1]} `
                         : '';
 
                     const zoneValues = zoneNumbers.map((zone) => {
@@ -3757,7 +3770,7 @@
                     }).join('');
 
                     row.innerHTML = `
-                        <td class="p-3">${icon}#${idx + 1}</td>
+                        <td class="p-3">${icon}#${rank}</td>
                         <td class="p-3 truncate max-w-[140px]">${summary.name}</td>
                         ${zoneValues}
                         <td class="p-3 text-right font-mono">${summary.total}</td>
