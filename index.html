@@ -317,6 +317,22 @@
             font-variant-numeric: tabular-nums;
         }
 
+        .hud-stage {
+            font-size: 1.6rem;
+            font-weight: 800;
+            color: var(--theme-color);
+            text-shadow: 0 0 16px var(--theme-shadow-soft);
+            font-variant-numeric: tabular-nums;
+        }
+
+        .hud-grid {
+            display: grid;
+            grid-template-columns: 1fr auto;
+            grid-template-rows: auto auto;
+            row-gap: 2px;
+            align-items: baseline;
+        }
+
         .hud-subscore {
             font-size: 0.6rem;
             letter-spacing: 0.24em;
@@ -966,14 +982,11 @@
         
         <!-- HEADER / HUD -->
         <header id="hud-header" class="hud-panel p-4 z-10 hidden">
-            <div class="flex justify-between items-center mb-2">
-                <div>
-                    <h1 class="hud-title">REMEMBER THE PATH</h1>
-                    <div id="stage-info" class="hud-meta font-mono hidden">ZONE 1 - STAGE 1</div>
-                </div>
-                <div class="text-right">
-                    <div id="score-display" class="hud-score hidden">0</div>
-                </div>
+            <div class="hud-grid mb-2">
+                <div id="stage-level-info" class="hud-stage hidden">ZONE 1</div>
+                <div id="score-display" class="hud-score hidden text-right">0</div>
+                <div id="stage-info" class="hud-subscore hidden">STAGE 1</div>
+                <div id="zone-high-score" class="hud-subscore hidden text-right">HI: 0</div>
             </div>
             
             <!-- Hearts & Timer HUD -->
@@ -1288,7 +1301,7 @@
         /**
          * CONFIGURATION
          */
-        const APP_VERSION = 'v1.5.3';
+        const APP_VERSION = 'v1.5.4';
 
         const BASE_STAGES = [
             { id: 1, size: 3, levels: 1 },
@@ -1507,8 +1520,10 @@
         const ui = {
             header: document.getElementById('hud-header'),
             hud: document.getElementById('game-hud'),
+            stageLevelInfo: document.getElementById('stage-level-info'),
             stageInfo: document.getElementById('stage-info'),
             scoreDisplay: document.getElementById('score-display'),
+            zoneHighScore: document.getElementById('zone-high-score'),
             levelBreadcrumbs: document.getElementById('level-breadcrumbs'),
             heartsContainer: document.getElementById('hearts-container'),
             statusText: document.getElementById('status-text'),
@@ -2104,6 +2119,12 @@
                         setPlayerNameValidity(true);
                     }
                 });
+                ui.playerNameInput.addEventListener('keydown', (event) => {
+                    if (event.key === 'Enter') {
+                        event.preventDefault();
+                        startGame();
+                    }
+                });
             }
 
             initHowToAnimations();
@@ -2146,16 +2167,20 @@
             showScreen('menu');
             applyZoneTheme(null);
             ui.hud.classList.add('hidden');
+            ui.stageLevelInfo.classList.add('hidden');
             ui.stageInfo.classList.add('hidden');
             ui.scoreDisplay.classList.add('hidden');
+            ui.zoneHighScore.classList.add('hidden');
         }
 
         function goZones() {
             clearLevelTransitionTimers();
             showZoneSelect();
             ui.hud.classList.add('hidden');
+            ui.stageLevelInfo.classList.add('hidden');
             ui.stageInfo.classList.add('hidden');
             ui.scoreDisplay.classList.add('hidden');
+            ui.zoneHighScore.classList.add('hidden');
         }
 
         function showHowTo() {
@@ -2296,8 +2321,10 @@
 
             applyZoneTheme(zone);
             ui.hud.classList.add('hidden');
+            ui.stageLevelInfo.classList.add('hidden');
             ui.stageInfo.classList.add('hidden');
             ui.scoreDisplay.classList.add('hidden');
+            ui.zoneHighScore.classList.add('hidden');
             updateHUD();
             if (ui.zoneTitle) ui.zoneTitle.textContent = zoneTitle;
             ui.stageTitle.textContent = `STAGE ${stageNumber}`;
@@ -2420,8 +2447,10 @@
         function startStage() {
             clearLevelTransitionTimers();
             ui.hud.classList.remove('hidden');
+            ui.stageLevelInfo.classList.remove('hidden');
             ui.stageInfo.classList.remove('hidden');
             ui.scoreDisplay.classList.remove('hidden');
+            ui.zoneHighScore.classList.remove('hidden');
             showScreen('game');
             setupLevel({ reusePath: false, hideOverlay: false });
             showLevelIntro(() => {
@@ -2432,8 +2461,30 @@
         function updateHUD() {
             const zoneNumber = state.player.zoneIndex + 1;
             const stageNumber = state.player.stageIndex + 1;
-            ui.stageInfo.textContent = `ZONE ${zoneNumber} - STAGE ${stageNumber}`;
+            ui.stageInfo.textContent = `STAGE ${stageNumber}`;
+            if (ui.stageLevelInfo) {
+                const zoneTitle = getZoneTitle(getActiveZone(), state.player.zoneIndex);
+                ui.stageLevelInfo.textContent = zoneTitle.toUpperCase();
+            }
             ui.scoreDisplay.textContent = state.player.score;
+            if (ui.zoneHighScore) {
+                const playerName = state.player.name || (ui.playerNameInput?.value.trim() || 'Player');
+                const leaderboard = getLeaderboard();
+                const scoreStats = getZoneScoreStats(leaderboard, playerName);
+                const zoneHigh = Number(scoreStats.playerHighs[zoneNumber]) || 0;
+                const topEntry = scoreStats.topByZone[zoneNumber];
+                const topHigh = topEntry ? Number(topEntry.score) || 0 : 0;
+                const currentScore = Number(state.player.score) || 0;
+                const isPersonalBest = currentScore > zoneHigh && currentScore > 0;
+                const isTopScore = currentScore > topHigh && currentScore > 0;
+                if (isTopScore) {
+                    ui.zoneHighScore.textContent = 'NEW TOP SCORE';
+                } else if (isPersonalBest) {
+                    ui.zoneHighScore.textContent = 'NEW PERSONAL BEST';
+                } else {
+                    ui.zoneHighScore.textContent = `HI: ${zoneHigh} · TOP: ${topHigh}`;
+                }
+            }
 
             const stageConfig = getActiveStageConfig();
             const totalLevels = stageConfig ? stageConfig.levels : 1;
