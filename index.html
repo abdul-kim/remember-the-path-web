@@ -33,6 +33,10 @@
             --shadow-sm: 0 8px 18px rgba(0, 0, 0, 0.25);
         }
 
+        html {
+            height: 100%;
+        }
+
         body {
             font-family: 'Inter', sans-serif;
             touch-action: manipulation; /* Prevent double-tap zoom */
@@ -42,6 +46,22 @@
             --grid-size: 48px;
             --ambient-step: 0.8s;
             --ambient-duration: 20s;
+        }
+
+        body.h-screen {
+            height: var(--app-height, 100vh);
+        }
+
+        @supports (height: 100svh) {
+            body.h-screen {
+                height: 100svh;
+            }
+        }
+
+        @supports (height: 100dvh) {
+            body.h-screen {
+                height: 100dvh;
+            }
         }
 
         body::before {
@@ -1446,10 +1466,18 @@
     <!-- AUDIO ELEMENTS (Simple synthesizers used in JS, fallback placeholders here) -->
 
     <script>
+        const setAppHeight = () => {
+            document.documentElement.style.setProperty('--app-height', `${window.innerHeight}px`);
+        };
+
+        window.addEventListener('resize', setAppHeight);
+        window.addEventListener('orientationchange', setAppHeight);
+        setAppHeight();
+
         /**
          * CONFIGURATION
          */
-        const APP_VERSION = 'v1.5.7';
+        const APP_VERSION = 'v1.5.8';
 
         const BASE_STAGES = [
             { id: 1, size: 3, levels: 1 },
