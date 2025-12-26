@@ -1363,10 +1363,10 @@
                 toneDurationSec: 0.1 // Tone duration in seconds
             },
             input: {
-                timePerSquareBaseSec: 1.5, // Seconds per square for input
+                timePerSquareBaseSec: 2, // Seconds per square for input
                 timePerSquareMinSec: 0.5,  // Cap for time per square
                 timePerSquareStagePenaltySec: 0.4, // Seconds reduced per stage
-                tickRateMs: 50,
+                tickRateMs: 50, // Timer tick rate
                 lowTimeThresholdPct: 30,
                 successClearMs: 200,
                 errorClearMs: 400,
@@ -2992,9 +2992,9 @@
             // Calculate Score
             // Score = base x time multiplier x stage number
             const baseScore = CONFIG.baseScorePerLevel;
-            const timeBonus = 1 + Math.floor((state.timerValue / state.maxTime) * CONFIG.scoring.timeBonusMultiplier);
-            const stageNumber = state.player.stageIndex + 1;
-            const levelScore = baseScore * timeBonus * stageNumber;
+            const timeMultiplier = 1 + Math.floor((state.timerValue / state.maxTime) * CONFIG.scoring.timeBonusMultiplier);
+            const stageMultiplier = state.player.stageIndex + 1;
+            const levelScore = baseScore * timeMultiplier * stageMultiplier;
             state.player.score += levelScore;
             
             updateHUD();
@@ -3005,8 +3005,8 @@
             ui.overlayTitle.classList.remove('hidden');
             ui.overlayTitle.textContent = "LEVEL COMPLETE";
             ui.overlayBaseScore.textContent = `+${baseScore}`;
-            ui.overlayTimeBonus.textContent = `x${timeBonus}`;
-            ui.overlayStageBonus.textContent = `x${stageNumber}`;
+            ui.overlayTimeBonus.textContent = `x${timeMultiplier}`;
+            ui.overlayStageBonus.textContent = `x${stageMultiplier}`;
             ui.overlayTotalScore.textContent = `+${levelScore}`;
             const continueLabel = ui.btnNext.querySelector('span');
             if (continueLabel) continueLabel.textContent = "CONTINUE";
