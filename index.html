@@ -1477,7 +1477,7 @@
         /**
          * CONFIGURATION
          */
-        const APP_VERSION = 'v1.5.9';
+        const APP_VERSION = 'v1.5.10';
 
         const BASE_STAGES = [
             { id: 1, size: 3, levels: 1 },
@@ -1542,6 +1542,7 @@
                 timePerSquareBaseSec: 2.35, // Seconds per square for input
                 timePerSquareMinSec: 0.5,  // Cap for time per square
                 timePerSquareStagePenaltySec: 0.4, // Seconds reduced per stage
+                startDelayMs: 250, // Grace period before timer countdown starts
                 tickRateMs: 50, // Timer tick rate
                 lowTimeThresholdPct: 30,
                 successClearMs: 200,
@@ -1665,6 +1666,7 @@
             decoys: [],
             inputIndex: 0,
             timer: null,
+            timerStartTimeout: null,
             timerValue: 0,
             maxTime: 0
         };
@@ -2847,6 +2849,17 @@
             ui.timerBar.dataset.state = stateName;
         }
 
+        function clearActiveTimer() {
+            if (state.timer) {
+                clearInterval(state.timer);
+                state.timer = null;
+            }
+            if (state.timerStartTimeout) {
+                clearTimeout(state.timerStartTimeout);
+                state.timerStartTimeout = null;
+            }
+        }
+
         function clearLevelTransitionTimers() {
             if (levelTransitionTimers.breakdownAuto) {
                 clearTimeout(levelTransitionTimers.breakdownAuto);
@@ -3208,23 +3221,33 @@
             state.maxTime = state.path.length * timePerSquare * CONFIG.timing.msPerSecond;
             state.timerValue = state.maxTime;
             
-            if (state.timer) clearInterval(state.timer);
+            clearActiveTimer();
             
             const tickRate = CONFIG.input.tickRateMs;
-            state.timer = setInterval(() => {
-                state.timerValue -= tickRate;
-                const pct = (state.timerValue / state.maxTime) * 100;
-                ui.timerBar.style.width = `${pct}%`;
+            const startDelayMs = Math.max(0, Number(CONFIG.input.startDelayMs) || 0);
+            const startTimer = () => {
+                state.timerStartTimeout = null;
+                state.timer = setInterval(() => {
+                    state.timerValue -= tickRate;
+                    const pct = (state.timerValue / state.maxTime) * 100;
+                    ui.timerBar.style.width = `${pct}%`;
 
-                // Change color if low
-                if (pct < CONFIG.input.lowTimeThresholdPct && ui.timerBar.dataset.state !== 'danger') {
-                    setTimerState("danger");
-                }
+                    // Change color if low
+                    if (pct < CONFIG.input.lowTimeThresholdPct && ui.timerBar.dataset.state !== 'danger') {
+                        setTimerState("danger");
+                    }
 
-                if (state.timerValue <= 0) {
-                    handleMistake("TIME UP");
-                }
-            }, tickRate);
+                    if (state.timerValue <= 0) {
+                        handleMistake("TIME UP");
+                    }
+                }, tickRate);
+            };
+
+            if (startDelayMs > 0) {
+                state.timerStartTimeout = setTimeout(startTimer, startDelayMs);
+            } else {
+                startTimer();
+            }
         }
 
         function handleInput(r, c, el) {
@@ -3264,7 +3287,7 @@
         }
 
         function handleMistake(reason) {
-            clearInterval(state.timer);
+            clearActiveTimer();
 
             // Add sound for Time Up
             if (reason === "TIME UP") {
@@ -3293,7 +3316,7 @@
         }
 
         function completeLevel() {
-            clearInterval(state.timer);
+            clearActiveTimer();
             state.status = 'SUCCESS';
             
             // Calculate Score
