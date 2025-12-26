@@ -464,6 +464,12 @@
             background: var(--surface-2);
             border: 1px solid var(--border-soft);
             border-radius: var(--radius-md);
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            --zone-preview-size: clamp(180px, 30vw, 240px);
+            --zone-preview-size-mobile: clamp(180px, 78vw, 240px);
+            --zone-preview-pad: 0px;
             transition: transform 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
         }
 
@@ -497,11 +503,141 @@
             color: var(--text-muted);
         }
 
+        .zone-description {
+            font-size: 0.7rem;
+            letter-spacing: 0.3em;
+            text-transform: uppercase;
+            color: var(--text-muted);
+            line-height: 1.5;
+        }
+
         .zone-meta {
             font-size: 10px;
             letter-spacing: 0.32em;
             text-transform: uppercase;
             color: var(--text-faint);
+            grid-column: 1;
+            grid-row: 2;
+            padding-right: 16px;
+        }
+
+        .zone-card-content {
+            display: grid;
+            grid-template-columns: minmax(0, 1fr) auto;
+            grid-template-rows: auto auto;
+            column-gap: 0;
+            row-gap: 12px;
+            align-items: stretch;
+        }
+
+        .zone-card-info {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            padding-top: 8px;
+            padding-right: 16px;
+        }
+
+        .zone-card-heading {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+
+        .zone-preview {
+            padding: var(--zone-preview-pad);
+            border-radius: var(--radius-md);
+            border: 1px solid var(--border-soft);
+            background: var(--surface-0);
+            box-shadow: inset 0 0 0 1px rgba(15, 23, 42, 0.6);
+            pointer-events: none;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            align-self: center;
+            justify-self: center;
+            width: var(--zone-preview-size);
+            aspect-ratio: 1 / 1;
+        }
+
+        .zone-preview-shell {
+            grid-column: 2;
+            grid-row: 1 / -1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding-left: 16px;
+            border-left: 1px solid var(--border-soft);
+            background: linear-gradient(180deg, rgba(15, 23, 42, 0.4), rgba(15, 23, 42, 0.15));
+            border-radius: 0 var(--radius-md) var(--radius-md) 0;
+        }
+
+        .zone-preview-grid {
+            --preview-size: 4;
+            display: grid;
+            grid-template-columns: repeat(var(--preview-size), minmax(0, 1fr));
+            grid-template-rows: repeat(var(--preview-size), minmax(0, 1fr));
+            gap: 4px;
+            width: 100%;
+            height: 100%;
+        }
+
+        .zone-preview-cell {
+            border-radius: var(--radius-sm);
+            background: var(--surface-3);
+            border: 1px solid var(--border-strong);
+            transition: background-color 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease, transform 0.2s ease;
+        }
+
+        .zone-preview-cell.is-active {
+            background: var(--zone-color, var(--theme-color));
+            border-color: var(--zone-color, var(--theme-color));
+            box-shadow: 0 0 10px var(--zone-color, var(--theme-color));
+            transform: scale(0.95);
+        }
+
+        .zone-preview-cell.is-decoy {
+            background: #f87171;
+            border-color: #f87171;
+            box-shadow: 0 0 10px rgba(248, 113, 113, 0.6);
+            animation: phantom-glitch 0.35s linear infinite;
+        }
+
+        @media (max-width: 520px) {
+            .zone-card-content {
+                grid-template-columns: 1fr;
+                grid-template-rows: auto auto auto;
+                row-gap: 12px;
+            }
+
+            .zone-card-info {
+                padding-right: 0;
+            }
+
+            .zone-preview {
+                width: 100%;
+                justify-self: stretch;
+            }
+
+            .zone-preview-shell {
+                grid-column: 1;
+                grid-row: 2;
+                padding-left: 0;
+                border-left: none;
+                background: transparent;
+                border-radius: 0;
+            }
+
+            .zone-meta {
+                grid-row: 3;
+                padding-right: 0;
+            }
+        }
+
+        @media (orientation: landscape) {
+            .zone-card {
+                --zone-preview-size: clamp(110px, 18vmin, 170px);
+            }
         }
 
         .leaderboard-row {
@@ -526,6 +662,16 @@
         .custom-scroll::-webkit-scrollbar-thumb {
             background: var(--border-strong);
             border-radius: 3px;
+        }
+
+        .scroll-hide {
+            scrollbar-width: none;
+            -ms-overflow-style: none;
+        }
+
+        .scroll-hide::-webkit-scrollbar {
+            width: 0;
+            height: 0;
         }
 
         /* Grid Cell Animations */
@@ -1026,9 +1172,11 @@
             </div>
 
             <!-- ZONE SELECT SCREEN -->
-            <div id="zone-screen" class="hidden absolute inset-0 z-20 flex flex-col items-center justify-center p-6 space-y-6">
-                <div id="zone-list" class="w-full max-w-md space-y-3"></div>
-                <button id="btn-zone-back" class="w-full max-w-xs btn btn-secondary btn-lg py-3 px-4 active:scale-95">Back</button>
+            <div id="zone-screen" class="hidden absolute inset-0 z-20 flex flex-col items-center justify-start p-6 overflow-y-auto custom-scroll scroll-hide">
+                <div class="w-full flex flex-col items-center space-y-6 my-auto">
+                    <div id="zone-list" class="w-full max-w-md space-y-3"></div>
+                    <button id="btn-zone-back" class="w-full max-w-xs btn btn-secondary btn-lg py-3 px-4 active:scale-95">Back</button>
+                </div>
             </div>
 
             <!-- STAGE INTRO SCREEN -->
@@ -1104,9 +1252,8 @@
 
             <!-- LEADERBOARD SCREEN -->
             <div id="leaderboard-screen" class="hidden fixed inset-0 z-30 flex flex-col p-4 sm:p-6">
-                <div class="flex justify-between items-center mb-6">
+                <div class="mb-6">
                     <h2 class="text-2xl font-bold title-core">Leaderboard</h2>
-                    <button id="btn-close-leaderboard" class="btn btn-secondary btn-sm py-2 px-3">Close</button>
                 </div>
                 <div class="flex-1 overflow-y-auto custom-scroll table-shell">
                     <table class="w-full text-left border-collapse">
@@ -1127,8 +1274,9 @@
                     </table>
                 </div>
                 <div id="leaderboard-status" class="mt-2 text-center text-xs text-muted"></div>
-                <div class="mt-4 text-center">
-                    <button id="btn-reset-data" class="btn btn-ghost btn-danger btn-sm py-2 px-3">Clear Data</button>
+                <div class="mt-4 flex flex-col items-center gap-3">
+                    <button id="btn-close-leaderboard" class="w-full max-w-xs btn btn-secondary btn-lg py-3 px-4 active:scale-95">Back</button>
+                    <button id="btn-reset-data" class="w-full max-w-xs btn btn-ghost btn-danger btn-sm py-2 px-3 hidden">Clear Data</button>
                 </div>
             </div>
 
@@ -1141,7 +1289,7 @@
                     </div>
                     <button id="btn-close-howto" class="btn btn-secondary btn-sm py-2 px-3">Back</button>
                 </div>
-                <div class="flex-1 overflow-y-auto custom-scroll pr-2">
+                <div class="flex-1 overflow-y-auto custom-scroll scroll-hide pr-2">
                     <div class="space-y-4 max-w-md mx-auto">
                         <div class="howto-section">Steps</div>
                         <div class="howto-card" style="animation-delay: 0.05s;">
@@ -1301,7 +1449,7 @@
         /**
          * CONFIGURATION
          */
-        const APP_VERSION = 'v1.5.6';
+        const APP_VERSION = 'v1.5.7';
 
         const BASE_STAGES = [
             { id: 1, size: 3, levels: 1 },
@@ -1431,7 +1579,13 @@
                 victoryToneDurationSec: 0.15
             },
             ui: {
-                heartFontSizeRem: 1.25
+                heartFontSizeRem: 1.25,
+                zonePreview: {
+                    stepMs: 420,
+                    pulseMs: 260,
+                    loopPauseMs: 900,
+                    segmentPauseScale: 0.7
+                }
             },
             leaderboard: {
                 maxEntries: 50,
@@ -1440,6 +1594,7 @@
                 appsScriptUrl: 'https://script.google.com/macros/s/AKfycby4sZKUsBQDWR2rMuDcz7smnfEn2Q-5UmKRfs1zgxhc0hL2utdf7KiMx39dkKXJRguP/exec',
                 requestTimeoutMs: 7000,
                 cacheTtlMs: 30000,
+                showResetButton: false,
                 allowReset: false
             },
             timing: {
@@ -1499,6 +1654,8 @@
             repeat: null
         };
 
+        const zonePreviewTimers = new Map();
+
         const levelTransitionTimers = {
             breakdownAuto: null,
             levelIntro: null,
@@ -1554,7 +1711,8 @@
             gameOverTitle: document.getElementById('game-over-title'),
             gameOverMark: document.getElementById('game-over-mark'),
             gameOverDescription: document.getElementById('game-over-description'),
-            gameOverHighScore: document.getElementById('game-over-high-score')
+            gameOverHighScore: document.getElementById('game-over-high-score'),
+            appVersion: document.getElementById('app-version')
         };
         const GAME_OVER_TITLE_CLASS = 'title-hero is-defeat mb-2';
         const VICTORY_TITLE_CLASS = 'title-hero is-victory mb-2';
@@ -2077,8 +2235,7 @@
          * GAME LOGIC
          */
         function init() {
-            const appVersionEl = document.getElementById('app-version');
-            if (appVersionEl) appVersionEl.textContent = APP_VERSION;
+            if (ui.appVersion) ui.appVersion.textContent = APP_VERSION;
 
             setupAmbientPaths();
             window.addEventListener('resize', () => {
@@ -2094,8 +2251,15 @@
             });
 
             const resetButton = document.getElementById('btn-reset-data');
-            if (resetButton && !CONFIG.leaderboard.allowReset && hasRemoteLeaderboard()) {
-                resetButton.textContent = 'Clear Cache';
+            if (resetButton) {
+                const showResetButton = Boolean(CONFIG.leaderboard.showResetButton);
+                resetButton.classList.toggle('hidden', !showResetButton);
+                if (showResetButton && !CONFIG.leaderboard.allowReset && hasRemoteLeaderboard()) {
+                    resetButton.textContent = 'Clear Cache';
+                }
+                if (showResetButton) {
+                    resetButton.addEventListener('click', withUiClickSound(resetData));
+                }
             }
             
             // Event Listeners
@@ -2104,7 +2268,6 @@
             document.getElementById('btn-leaderboard').addEventListener('click', withUiClickSound(showLeaderboard));
             document.getElementById('btn-close-leaderboard').addEventListener('click', withUiClickSound(hideLeaderboard));
             document.getElementById('btn-close-howto').addEventListener('click', withUiClickSound(hideHowTo));
-            document.getElementById('btn-reset-data').addEventListener('click', withUiClickSound(resetData));
             document.getElementById('btn-next-level').addEventListener('click', withUiClickSound(advanceFromBreakdown, {
                 shouldPlay: hasNextLevelInStage
             }));
@@ -2122,6 +2285,7 @@
                 ui.playerNameInput.addEventListener('keydown', (event) => {
                     if (event.key === 'Enter') {
                         event.preventDefault();
+                        playUiClick();
                         startGame();
                     }
                 });
@@ -2158,12 +2322,14 @@
         }
 
         function beginZone(zoneIndex) {
+            clearZonePreviewTimers();
             resetPlayerForZone(zoneIndex);
             showStageIntro();
         }
 
         function goHome() {
             clearLevelTransitionTimers();
+            clearZonePreviewTimers();
             showScreen('menu');
             applyZoneTheme(null);
             ui.hud.classList.add('hidden');
@@ -2246,6 +2412,110 @@
 
             runWatch();
             runRepeat();
+        }
+
+        function clearZonePreviewTimers() {
+            zonePreviewTimers.forEach((timers) => {
+                timers.forEach(timer => clearTimeout(timer));
+            });
+            zonePreviewTimers.clear();
+        }
+
+        function initZonePreviewAnimations() {
+            clearZonePreviewTimers();
+            const previewGrids = Array.from(document.querySelectorAll('[data-zone-preview]'));
+            if (!previewGrids.length) return;
+
+            const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+            previewGrids.forEach((gridEl) => {
+                const zoneIndex = Number(gridEl.dataset.zonePreview);
+                const zone = CONFIG.zones[zoneIndex];
+                if (!zone) return;
+
+                const stages = getZoneStages(zone);
+                const previewStageIndex = stages.length > 1 ? 1 : 0;
+                const stageConfig = stages[previewStageIndex] || stages[0] || BASE_STAGES[0];
+                const size = Math.max(2, Number(stageConfig?.size) || 4);
+                const levelIndex = Math.min(1, Math.max(0, (Number(stageConfig?.levels) || 1) - 1));
+
+                gridEl.style.setProperty('--preview-size', size);
+                gridEl.innerHTML = '';
+
+                const cellMap = new Map();
+                for (let r = 0; r < size; r++) {
+                    for (let c = 0; c < size; c++) {
+                        const cell = document.createElement('div');
+                        cell.className = 'zone-preview-cell';
+                        cell.dataset.r = r;
+                        cell.dataset.c = c;
+                        cellMap.set(gridKey(r, c), cell);
+                        gridEl.appendChild(cell);
+                    }
+                }
+
+                const generated = PathGenerator.generate({ size, levelIndex, zone });
+                const path = Array.isArray(generated.path) ? generated.path : [];
+                if (!path.length) return;
+
+                const segments = Array.isArray(generated.segments)
+                    ? generated.segments
+                    : path.map(() => 0);
+                const decoys = Array.isArray(generated.decoys)
+                    ? generated.decoys
+                    : path.map(() => null);
+
+                if (prefersReducedMotion) {
+                    path.forEach((step, index) => {
+                        const cell = cellMap.get(gridKey(step.r, step.c));
+                        if (cell) cell.classList.add('is-active');
+                        const decoy = decoys[index];
+                        const decoyCell = decoy ? cellMap.get(gridKey(decoy.r, decoy.c)) : null;
+                        if (decoyCell && decoyCell !== cell) decoyCell.classList.add('is-decoy');
+                    });
+                    return;
+                }
+
+                const timers = [];
+                zonePreviewTimers.set(gridEl, timers);
+
+                const previewConfig = CONFIG.ui?.zonePreview || {};
+                const stepMs = Number(previewConfig.stepMs) || 420;
+                const pulseMs = Number(previewConfig.pulseMs) || 260;
+                const loopPauseMs = Number(previewConfig.loopPauseMs) || 900;
+                const segmentScale = Number(previewConfig.segmentPauseScale) || 0.7;
+                const segmentPauseMs = zone?.pathStyle === 'broken-diagonal'
+                    ? Math.max(120, Math.round(CONFIG.path.broken.segmentPauseMs * segmentScale))
+                    : 0;
+
+                const runSequence = () => {
+                    let delay = 0;
+                    path.forEach((step, index) => {
+                        if (index > 0 && segmentPauseMs && segments[index] !== segments[index - 1]) {
+                            delay += segmentPauseMs;
+                        }
+                        const decoy = decoys[index];
+                        const cell = cellMap.get(gridKey(step.r, step.c));
+                        const decoyCell = decoy ? cellMap.get(gridKey(decoy.r, decoy.c)) : null;
+
+                        timers.push(setTimeout(() => {
+                            if (cell) cell.classList.add('is-active');
+                            if (decoyCell && decoyCell !== cell) decoyCell.classList.add('is-decoy');
+                            timers.push(setTimeout(() => {
+                                if (cell) cell.classList.remove('is-active');
+                                if (decoyCell && decoyCell !== cell) decoyCell.classList.remove('is-decoy');
+                            }, pulseMs));
+                        }, delay));
+
+                        delay += stepMs;
+                    });
+
+                    const totalMs = delay + pulseMs + loopPauseMs;
+                    timers.push(setTimeout(runSequence, totalMs));
+                };
+
+                runSequence();
+            });
         }
 
         function updateHowToScoreDetails() {
@@ -2410,7 +2680,7 @@
             CONFIG.zones.forEach((zone, index) => {
                 const button = document.createElement('button');
                 button.type = 'button';
-                button.className = 'zone-card w-full text-left p-4 flex flex-col gap-2';
+                button.className = 'zone-card w-full text-left p-4';
                 const zoneTitle = getZoneTitle(zone, index);
                 const themeName = zone?.theme?.name || 'Unknown';
                 const color = zone?.theme?.color || '#38bdf8';
@@ -2430,20 +2700,29 @@
                 const scoreLine = `Your High: ${playerHighText} · Top: ${topText}`;
 
                 button.innerHTML = `
-                    <div class="flex items-center justify-between gap-4">
-                        <div>
-                            <div class="zone-title">${zoneTitle}</div>
-                            <div class="zone-subtitle">${themeName}</div>
+                    <div class="zone-card-content">
+                        <div class="zone-card-info">
+                            <div class="zone-card-heading">
+                                <div class="zone-title">${zoneTitle}</div>
+                                <div class="zone-subtitle">${themeName}</div>
+                            </div>
+                            <p class="zone-description">${description}</p>
                         </div>
+                        <div class="zone-preview-shell" aria-hidden="true">
+                            <div class="zone-preview">
+                                <div class="zone-preview-grid" data-zone-preview="${index}"></div>
+                            </div>
+                        </div>
+                        ${isComingSoon ? '' : `<div class="zone-meta">${scoreLine}</div>`}
                     </div>
-                    <p class="text-sm text-muted leading-relaxed">${description}</p>
-                    ${isComingSoon ? '' : `<div class="zone-meta">${scoreLine}</div>`}
                 `;
                 if (!isComingSoon) {
                     button.addEventListener('click', () => beginZone(index));
                 }
                 ui.zoneList.appendChild(button);
             });
+
+            initZonePreviewAnimations();
         }
 
         function startStage() {
@@ -3511,6 +3790,10 @@
                 ui.header.classList.remove('hidden');
             } else {
                 ui.header.classList.add('hidden');
+            }
+
+            if (ui.appVersion) {
+                ui.appVersion.classList.toggle('hidden', screenName !== 'menu');
             }
         }
 
