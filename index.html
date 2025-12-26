@@ -1301,7 +1301,7 @@
         /**
          * CONFIGURATION
          */
-        const APP_VERSION = 'v1.5.4';
+        const APP_VERSION = 'v1.5.5';
 
         const BASE_STAGES = [
             { id: 1, size: 3, levels: 1 },
@@ -2377,24 +2377,26 @@
             return { playerHighs, topByZone };
         }
 
-        function getPlayerHighScoreForZone(leaderboard, playerName, zoneNumber) {
-            if (!Number.isFinite(zoneNumber)) return 0;
-            const { playerHighs } = getZoneScoreStats(leaderboard || [], playerName);
-            return Number(playerHighs[zoneNumber]) || 0;
-        }
-
-        function isNewHighScoreForZone(playerName, score, zoneIndex) {
+        function getHighScoreAchievementLabel(playerName, score, zoneIndex) {
             const safeScore = Number(score) || 0;
-            if (safeScore <= 0) return false;
+            if (safeScore <= 0) return '';
             const zoneNumber = Number.isInteger(zoneIndex) ? zoneIndex + 1 : null;
-            if (!Number.isFinite(zoneNumber)) return false;
-            const previousHigh = getPlayerHighScoreForZone(getLeaderboard(), playerName, zoneNumber);
-            return safeScore > previousHigh;
+            if (!Number.isFinite(zoneNumber)) return '';
+            const leaderboard = getLeaderboard();
+            const scoreStats = getZoneScoreStats(leaderboard, playerName);
+            const playerHigh = Number(scoreStats.playerHighs[zoneNumber]) || 0;
+            const topEntry = scoreStats.topByZone[zoneNumber];
+            const topHigh = topEntry ? Number(topEntry.score) || 0 : 0;
+            if (safeScore > topHigh) return 'NEW TOP SCORE';
+            if (safeScore > playerHigh) return 'NEW PERSONAL BEST';
+            return '';
         }
 
-        function setGameOverHighScoreBadge(isHighScore) {
+        function setGameOverHighScoreBadge(label) {
             if (!ui.gameOverHighScore) return;
-            ui.gameOverHighScore.classList.toggle('hidden', !isHighScore);
+            const hasLabel = Boolean(label);
+            ui.gameOverHighScore.classList.toggle('hidden', !hasLabel);
+            if (hasLabel) ui.gameOverHighScore.textContent = label;
         }
 
         function renderZoneList() {
@@ -2475,15 +2477,9 @@
                 const topEntry = scoreStats.topByZone[zoneNumber];
                 const topHigh = topEntry ? Number(topEntry.score) || 0 : 0;
                 const currentScore = Number(state.player.score) || 0;
-                const isPersonalBest = currentScore > zoneHigh && currentScore > 0;
-                const isTopScore = currentScore > topHigh && currentScore > 0;
-                if (isTopScore) {
-                    ui.zoneHighScore.textContent = 'NEW TOP SCORE';
-                } else if (isPersonalBest) {
-                    ui.zoneHighScore.textContent = 'NEW PERSONAL BEST';
-                } else {
-                    ui.zoneHighScore.textContent = `HI: ${zoneHigh} · TOP: ${topHigh}`;
-                }
+                const bestPlayer = Math.max(zoneHigh, currentScore);
+                const bestTop = Math.max(topHigh, currentScore);
+                ui.zoneHighScore.textContent = `HI: ${bestPlayer} · TOP: ${bestTop}`;
             }
 
             const stageConfig = getActiveStageConfig();
@@ -3057,7 +3053,7 @@
 
         function gameOver() {
             state.status = 'GAMEOVER';
-            const isNewHighScore = isNewHighScoreForZone(
+            const achievementLabel = getHighScoreAchievementLabel(
                 state.player.name,
                 state.player.score,
                 state.player.zoneIndex
@@ -3077,7 +3073,7 @@
             ui.gameOverMark.textContent = messages.length ? getRandomItem(messages) : 'Good try!';
             ui.gameOverMark.className = GAME_OVER_MARK_CLASS;
             ui.gameOverDescription.textContent = '';
-            setGameOverHighScoreBadge(isNewHighScore);
+            setGameOverHighScoreBadge(achievementLabel);
             showScreen('game-over');
             playToneSequence(
                 CONFIG.audio.gameOverToneFreqsHz,
@@ -3095,7 +3091,7 @@
             const lastStageIndex = Math.max(0, zoneStages.length - 1);
             const lastStage = zoneStages[lastStageIndex];
             const lastLevelIndex = lastStage ? lastStage.levels - 1 : 0;
-            const isNewHighScore = isNewHighScoreForZone(
+            const achievementLabel = getHighScoreAchievementLabel(
                 state.player.name,
                 state.player.score,
                 activeZoneIndex
@@ -3115,7 +3111,7 @@
             ui.gameOverMark.textContent = '';
             ui.gameOverMark.className = VICTORY_MARK_CLASS;
             ui.gameOverDescription.textContent = '';
-            setGameOverHighScoreBadge(isNewHighScore);
+            setGameOverHighScoreBadge(achievementLabel);
             
             showScreen('game-over');
             playToneSequence(
