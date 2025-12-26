@@ -1477,7 +1477,7 @@
         /**
          * CONFIGURATION
          */
-        const APP_VERSION = 'v1.5.11';
+        const APP_VERSION = 'v1.5.12';
 
         const BASE_STAGES = [
             { id: 1, size: 3, levels: 1 },
@@ -1691,6 +1691,14 @@
             levelIntro: null,
             advanceTriggered: false,
             breakdownAdvance: null
+        };
+        const edgeSwipeState = {
+            active: false,
+            touchId: null,
+            startX: 0,
+            startY: 0,
+            startTime: 0,
+            action: null
         };
 
         // DOM Elements
@@ -2248,6 +2256,72 @@
             };
         }
 
+        function getEdgeSwipeBackAction() {
+            if (screens.howto && !screens.howto.classList.contains('hidden')) return hideHowTo;
+            if (screens.zones && !screens.zones.classList.contains('hidden')) return goHome;
+            return null;
+        }
+
+        function resetEdgeSwipeState() {
+            edgeSwipeState.active = false;
+            edgeSwipeState.touchId = null;
+            edgeSwipeState.action = null;
+        }
+
+        function initEdgeSwipeBack() {
+            const startEdgePx = 24;
+            const minSwipeX = 70;
+            const maxSwipeY = 80;
+            const maxDurationMs = 800;
+
+            const onTouchStart = (event) => {
+                if (event.touches.length !== 1) return;
+                const action = getEdgeSwipeBackAction();
+                if (!action) return;
+
+                const touch = event.touches[0];
+                if (touch.clientX > startEdgePx) return;
+
+                edgeSwipeState.active = true;
+                edgeSwipeState.touchId = touch.identifier;
+                edgeSwipeState.startX = touch.clientX;
+                edgeSwipeState.startY = touch.clientY;
+                edgeSwipeState.startTime = performance.now();
+                edgeSwipeState.action = action;
+            };
+
+            const onTouchEnd = (event) => {
+                if (!edgeSwipeState.active) return;
+                const touch = Array.from(event.changedTouches)
+                    .find(touchEntry => touchEntry.identifier === edgeSwipeState.touchId);
+                if (!touch) {
+                    resetEdgeSwipeState();
+                    return;
+                }
+
+                const deltaX = touch.clientX - edgeSwipeState.startX;
+                const deltaY = touch.clientY - edgeSwipeState.startY;
+                const elapsedMs = performance.now() - edgeSwipeState.startTime;
+                const action = edgeSwipeState.action;
+                resetEdgeSwipeState();
+
+                if (!action) return;
+                if (elapsedMs > maxDurationMs) return;
+                if (deltaX < minSwipeX) return;
+                if (Math.abs(deltaY) > maxSwipeY) return;
+                if (deltaX <= Math.abs(deltaY) + 20) return;
+
+                playUiClick();
+                action();
+            };
+
+            const onTouchCancel = () => resetEdgeSwipeState();
+
+            document.addEventListener('touchstart', onTouchStart, { passive: true });
+            document.addEventListener('touchend', onTouchEnd, { passive: true });
+            document.addEventListener('touchcancel', onTouchCancel, { passive: true });
+        }
+
         function normalizePlayerName(name) {
             return String(name || '').trim().toLowerCase();
         }
@@ -2305,6 +2379,8 @@
             document.getElementById('btn-retry').addEventListener('click', restartZone);
             document.getElementById('btn-home').addEventListener('click', withUiClickSound(goZones));
             document.getElementById('btn-zone-back').addEventListener('click', withUiClickSound(goHome));
+
+            initEdgeSwipeBack();
 
             if (ui.playerNameInput) {
                 ui.playerNameInput.addEventListener('input', () => {
@@ -2370,7 +2446,9 @@
         }
 
         function goZones() {
+            clearActiveTimer();
             clearLevelTransitionTimers();
+            setGridInteractivity(false);
             showZoneSelect();
             ui.hud.classList.add('hidden');
             ui.stageLevelInfo.classList.add('hidden');
