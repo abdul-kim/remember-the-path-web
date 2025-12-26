@@ -1288,7 +1288,7 @@
         /**
          * CONFIGURATION
          */
-        const APP_VERSION = 'v1.5.2';
+        const APP_VERSION = 'v1.5.3';
 
         const BASE_STAGES = [
             { id: 1, size: 3, levels: 1 },
@@ -1331,7 +1331,6 @@
                     theme: { color: '#34d399', name: 'Zone 4' },
                     pathStyle: 'broken-diagonal',
                     mechanic: 'superposition',
-                    decoyChance: 0.25,
                     stages: BASE_STAGES.map(stage => ({ ...stage }))
                 }
             ],
@@ -1394,7 +1393,7 @@
                 }
             },
             superposition: {
-                decoyChance: 0.5
+                decoyPathRatio: 0.5
             },
             audio: {
                 gainStart: 0.1,
@@ -1600,10 +1599,11 @@
                 }
 
                 if (zone?.mechanic === 'superposition') {
-                    const decoyChance = Number.isFinite(zone?.decoyChance)
-                        ? zone.decoyChance
-                        : CONFIG.superposition.decoyChance;
-                    result.decoys = this.generateDecoys(result.path, size, decoyChance);
+                    result.decoys = this.generateDecoys(
+                        result.path,
+                        size,
+                        CONFIG.superposition.decoyPathRatio
+                    );
                 } else {
                     result.decoys = [];
                 }
@@ -1611,14 +1611,26 @@
                 return result;
             },
 
-            generateDecoys(path, size, decoyChance = 0.5) {
+            generateDecoys(path, size, decoyPathRatio = 0.5) {
                 if (!Array.isArray(path) || !path.length || size <= 1) {
                     return Array.isArray(path) ? path.map(() => null) : [];
                 }
 
-                const chance = Math.min(1, Math.max(0, Number(decoyChance) || 0));
-                return path.map((step) => {
-                    if (Math.random() >= chance) return null;
+                const ratio = Math.min(1, Math.max(0, Number(decoyPathRatio) || 0));
+                if (ratio <= 0) {
+                    return path.map(() => null);
+                }
+                const decoyCount = Math.min(
+                    path.length,
+                    Math.max(1, Math.round(path.length * ratio))
+                );
+                const decoyIndices = new Set();
+                while (decoyIndices.size < decoyCount) {
+                    decoyIndices.add(getRandomInt(0, path.length - 1));
+                }
+
+                return path.map((step, index) => {
+                    if (!decoyIndices.has(index)) return null;
                     let r = step.r;
                     let c = step.c;
                     let attempts = 0;
