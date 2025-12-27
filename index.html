@@ -1477,7 +1477,7 @@
         /**
          * CONFIGURATION
          */
-        const APP_VERSION = 'v1.5.14';
+        const APP_VERSION = 'v1.5.15';
 
         const BASE_STAGES = [
             { id: 1, size: 3, levels: 1 },
@@ -3486,11 +3486,12 @@
             ui.gameOverDescription.textContent = '';
             setGameOverHighScoreBadge(achievementLabel);
             showScreen('game-over');
+            const isHighScore = Boolean(achievementLabel);
             playToneSequence(
-                CONFIG.audio.gameOverToneFreqsHz,
-                CONFIG.audio.gameOverToneType,
-                CONFIG.audio.gameOverToneDurationSec,
-                CONFIG.audio.gameOverToneDelayMs
+                isHighScore ? CONFIG.audio.victoryToneFreqsHz : CONFIG.audio.gameOverToneFreqsHz,
+                isHighScore ? CONFIG.audio.victoryToneType : CONFIG.audio.gameOverToneType,
+                isHighScore ? CONFIG.audio.victoryToneDurationSec : CONFIG.audio.gameOverToneDurationSec,
+                isHighScore ? CONFIG.audio.victoryToneDelayMs : CONFIG.audio.gameOverToneDelayMs
             );
         }
 
