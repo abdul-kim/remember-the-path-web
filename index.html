@@ -1477,7 +1477,7 @@
         /**
          * CONFIGURATION
          */
-        const APP_VERSION = 'v1.5.13';
+        const APP_VERSION = 'v1.5.14';
 
         const BASE_STAGES = [
             { id: 1, size: 3, levels: 1 },
@@ -2324,6 +2324,12 @@
 
         function normalizePlayerName(name) {
             return String(name || '').trim().toLowerCase();
+        }
+
+        const LOCAL_ONLY_NAME = 'tester';
+
+        function isLocalOnlyPlayerName(name) {
+            return normalizePlayerName(name) === LOCAL_ONLY_NAME;
         }
 
         function setPlayerNameValidity(isValid) {
@@ -3585,6 +3591,11 @@
             return entries.map(normalizeLeaderboardEntry).filter(Boolean);
         }
 
+        function getLocalOnlyEntries(entries) {
+            if (!Array.isArray(entries)) return [];
+            return entries.filter((entry) => entry && isLocalOnlyPlayerName(entry.name));
+        }
+
         function buildLeaderboardUrl() {
             const base = CONFIG.leaderboard.appsScriptUrl.trim();
             if (!base) return '';
@@ -3629,6 +3640,7 @@
                         throw new Error(`Leaderboard request failed (${response.status})`);
                     }
                     const data = await response.json();
+                    const localOnlyEntries = getLocalOnlyEntries(getLeaderboard());
                     const entries = normalizeLeaderboardEntries(
                         Array.isArray(data)
                             ? data
@@ -3638,10 +3650,12 @@
                                     ? data.data
                                     : []
                     );
-                    setLeaderboardCache(entries);
+                    const filteredEntries = entries.filter((entry) => !isLocalOnlyPlayerName(entry.name));
+                    const mergedEntries = filteredEntries.concat(localOnlyEntries);
+                    setLeaderboardCache(mergedEntries);
                     leaderboardState.lastFetchedAt = Date.now();
                     updateMiniHighScore();
-                    return entries;
+                    return mergedEntries;
                 } catch (error) {
                     leaderboardState.lastError = error;
                     return getLeaderboard();
@@ -3787,7 +3801,7 @@
             setLeaderboardCache(lb);
             updateMiniHighScore();
 
-            if (hasRemoteLeaderboard()) {
+            if (hasRemoteLeaderboard() && !isLocalOnlyPlayerName(safeName)) {
                 postLeaderboardPayload(entry);
             }
         }

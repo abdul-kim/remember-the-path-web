@@ -1,5 +1,14 @@
 const SHEET_NAME = 'Leaderboard';
 const ALLOW_RESET = false;
+const LOCAL_ONLY_NAME = 'tester';
+
+function normalizeName_(name) {
+  return String(name || '').trim().toLowerCase();
+}
+
+function isLocalOnlyName_(name) {
+  return normalizeName_(name) === LOCAL_ONLY_NAME;
+}
 
 function getSheet_() {
   const ss = SpreadsheetApp.getActiveSpreadsheet();
@@ -33,7 +42,8 @@ function doGet(e) {
 
   let entries = data.slice(1)
     .map(rowToEntry_)
-    .filter((entry) => entry.name);
+    .filter((entry) => entry.name)
+    .filter((entry) => !isLocalOnlyName_(entry.name));
 
   const limit = parseInt(e && e.parameter && e.parameter.limit, 10);
   if (Number.isFinite(limit) && limit > 0 && entries.length > limit) {
@@ -59,6 +69,9 @@ function doPost(e) {
   const name = String(payload.name || '').trim();
   if (!name) {
     return jsonOutput_({ ok: false, error: 'missing_name' });
+  }
+  if (isLocalOnlyName_(name)) {
+    return jsonOutput_({ ok: true, localOnly: true });
   }
 
   const entry = {
