@@ -1477,7 +1477,7 @@
         /**
          * CONFIGURATION
          */
-        const APP_VERSION = 'v1.5.15';
+        const APP_VERSION = 'v1.5.16';
 
         const BASE_STAGES = [
             { id: 1, size: 3, levels: 1 },
@@ -1644,6 +1644,7 @@
                 'Not bad!',
                 'That was good!'
             ],
+            playerNameMaxLength: 10,
             localStorageKey: 'ftp_leaderboard_v1'
         };
 
@@ -2322,8 +2323,16 @@
             document.addEventListener('touchcancel', onTouchCancel, { passive: true });
         }
 
+        function sanitizePlayerName(name) {
+            const trimmed = String(name || '').trim();
+            if (!trimmed) return '';
+            const maxLength = Number(CONFIG.playerNameMaxLength) || 0;
+            if (!maxLength) return trimmed;
+            return trimmed.slice(0, maxLength);
+        }
+
         function normalizePlayerName(name) {
-            return String(name || '').trim().toLowerCase();
+            return sanitizePlayerName(name).toLowerCase();
         }
 
         const LOCAL_ONLY_NAME = 'tester';
@@ -2389,8 +2398,13 @@
             initEdgeSwipeBack();
 
             if (ui.playerNameInput) {
+                ui.playerNameInput.maxLength = Number(CONFIG.playerNameMaxLength) || ui.playerNameInput.maxLength;
                 ui.playerNameInput.addEventListener('input', () => {
-                    if (ui.playerNameInput.value.trim()) {
+                    const sanitized = sanitizePlayerName(ui.playerNameInput.value);
+                    if (ui.playerNameInput.value !== sanitized) {
+                        ui.playerNameInput.value = sanitized;
+                    }
+                    if (sanitized) {
                         setPlayerNameValidity(true);
                     }
                 });
@@ -2410,11 +2424,14 @@
 
         function startGame() {
             clearLevelTransitionTimers();
-            const name = ui.playerNameInput ? ui.playerNameInput.value.trim() : '';
+            const name = ui.playerNameInput ? sanitizePlayerName(ui.playerNameInput.value) : '';
             if (!name) {
                 setPlayerNameValidity(false);
                 if (ui.playerNameInput) ui.playerNameInput.focus();
                 return;
+            }
+            if (ui.playerNameInput && ui.playerNameInput.value !== name) {
+                ui.playerNameInput.value = name;
             }
             setPlayerNameValidity(true);
             state.player.name = name;
@@ -2817,19 +2834,31 @@
                     <div class="zone-card-content">
                         <div class="zone-card-info">
                             <div class="zone-card-heading">
-                                <div class="zone-title">${zoneTitle}</div>
-                                <div class="zone-subtitle">${themeName}</div>
+                                <div class="zone-title"></div>
+                                <div class="zone-subtitle"></div>
                             </div>
-                            <p class="zone-description">${description}</p>
+                            <p class="zone-description"></p>
                         </div>
                         <div class="zone-preview-shell" aria-hidden="true">
                             <div class="zone-preview">
-                                <div class="zone-preview-grid" data-zone-preview="${index}"></div>
+                                <div class="zone-preview-grid"></div>
                             </div>
                         </div>
-                        ${isComingSoon ? '' : `<div class="zone-meta">${scoreLine}</div>`}
+                        ${isComingSoon ? '' : `<div class="zone-meta"></div>`}
                     </div>
                 `;
+                const zoneTitleEl = button.querySelector('.zone-title');
+                if (zoneTitleEl) zoneTitleEl.textContent = zoneTitle;
+                const zoneSubtitleEl = button.querySelector('.zone-subtitle');
+                if (zoneSubtitleEl) zoneSubtitleEl.textContent = themeName;
+                const zoneDescriptionEl = button.querySelector('.zone-description');
+                if (zoneDescriptionEl) zoneDescriptionEl.textContent = description;
+                const previewGridEl = button.querySelector('.zone-preview-grid');
+                if (previewGridEl) previewGridEl.dataset.zonePreview = index;
+                if (!isComingSoon) {
+                    const zoneMetaEl = button.querySelector('.zone-meta');
+                    if (zoneMetaEl) zoneMetaEl.textContent = scoreLine;
+                }
                 if (!isComingSoon) {
                     button.addEventListener('click', () => beginZone(index));
                 }
@@ -3570,7 +3599,7 @@
 
         function normalizeLeaderboardEntry(entry) {
             if (!entry || typeof entry !== 'object') return null;
-            const name = String(entry.name || '').trim();
+            const name = sanitizePlayerName(entry.name);
             if (!name) return null;
             const score = Number(entry.score) || 0;
             const zone = Number(entry.zone);
@@ -3766,7 +3795,7 @@
 
         function saveScore(name, score, zoneIndex, stageIndex, levelIndex) {
             let lb = getLeaderboard();
-            const safeName = String(name || 'Player').trim() || 'Player';
+            const safeName = sanitizePlayerName(name) || 'Player';
             const safeScore = Number(score) || 0;
             const zone = Number.isInteger(zoneIndex) ? zoneIndex + 1 : null;
             const stage = Number.isInteger(stageIndex) ? stageIndex + 1 : null;
@@ -3823,7 +3852,13 @@
 
             if (summaries.length === 0) {
                 const message = emptyMessage || 'No scores yet. Be the first!';
-                ui.leaderboardBody.innerHTML = `<tr><td colspan="${columnCount}" class="p-4 text-center text-muted">${message}</td></tr>`;
+                const row = document.createElement('tr');
+                const cell = document.createElement('td');
+                cell.colSpan = columnCount;
+                cell.className = 'p-4 text-center text-muted';
+                cell.textContent = message;
+                row.appendChild(cell);
+                ui.leaderboardBody.appendChild(row);
             } else {
                 const maxEntries = Number(CONFIG.leaderboard.maxEntries) || 0;
                 const displaySummaries = maxEntries > 0
@@ -3852,19 +3887,32 @@
                         ? `${CONFIG.leaderboard.topRankIcons[rank - 1]} `
                         : '';
 
-                    const zoneValues = zoneNumbers.map((zone) => {
+                    const rankCell = document.createElement('td');
+                    rankCell.className = 'p-3';
+                    rankCell.textContent = `${icon}#${rank}`;
+                    row.appendChild(rankCell);
+
+                    const nameCell = document.createElement('td');
+                    nameCell.className = 'p-3 truncate max-w-[140px]';
+                    nameCell.textContent = summary.name;
+                    row.appendChild(nameCell);
+
+                    zoneNumbers.forEach((zone) => {
                         const hasScore = Object.prototype.hasOwnProperty.call(summary.zones, zone);
                         const scoreText = hasScore ? summary.zones[zone] : '—';
-                        const classes = hasScore ? '' : 'text-muted';
-                        return `<td class="p-3 text-right font-mono ${classes}">${scoreText}</td>`;
-                    }).join('');
+                        const cell = document.createElement('td');
+                        cell.className = 'p-3 text-right font-mono';
+                        if (!hasScore) {
+                            cell.classList.add('text-muted');
+                        }
+                        cell.textContent = scoreText;
+                        row.appendChild(cell);
+                    });
 
-                    row.innerHTML = `
-                        <td class="p-3">${icon}#${rank}</td>
-                        <td class="p-3 truncate max-w-[140px]">${summary.name}</td>
-                        ${zoneValues}
-                        <td class="p-3 text-right font-mono">${summary.total}</td>
-                    `;
+                    const totalCell = document.createElement('td');
+                    totalCell.className = 'p-3 text-right font-mono';
+                    totalCell.textContent = summary.total;
+                    row.appendChild(totalCell);
                     ui.leaderboardBody.appendChild(row);
                 });
             }
